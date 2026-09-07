@@ -337,16 +337,20 @@ Item {
                     var gId = "g_" + arr[i][0];
                     barTabRoot.assignGroupColor(gId);
                     for (var j = 0; j < arr[i].length; j++) {
-                        var info = getModuleInfo(arr[i][j]);
+                        var gModuleId = arr[i][j];
+                        if (used[gModuleId]) continue;
+                        var info = getModuleInfo(gModuleId);
                         info.groupId = gId;
                         model.append(info);
-                        used[arr[i][j]] = true;
+                        used[gModuleId] = true;
                     }
                 } else {
-                    var info = getModuleInfo(arr[i]);
+                    var sModuleId = arr[i];
+                    if (used[sModuleId]) continue;
+                    var info = getModuleInfo(sModuleId);
                     info.groupId = "";
                     model.append(info);
-                    used[arr[i][j]] = true;
+                    used[sModuleId] = true;
                 }
             }
         }
