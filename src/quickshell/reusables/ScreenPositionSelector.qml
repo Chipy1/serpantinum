@@ -11,6 +11,8 @@ Item {
     property real verticalPosition: 90
     property bool gridEnabled: false
     property bool showBar: false
+    property real marginV: 0
+    property real marginH: 0
 
     property int configRevision: 0
     Connections {
@@ -53,6 +55,27 @@ Item {
     readonly property real insetBottom: (root.showBar && root.barPosition === "bottom") ? barPreviewBox.height : 0
     readonly property real insetLeft: (root.showBar && root.barPosition === "left") ? barPreviewBox.width : 0
     readonly property real insetRight: (root.showBar && root.barPosition === "right") ? barPreviewBox.width : 0
+
+    readonly property real safeTopPercent: {
+        let h = dragBox ? dragBox.availH : 0;
+        if (h <= 0) return 5;
+        return Math.max(0, Math.min(100, Math.round(((root.insetTop + root.marginV) / h) * 100.0)));
+    }
+    readonly property real safeBottomPercent: {
+        let h = dragBox ? dragBox.availH : 0;
+        if (h <= 0) return 95;
+        return Math.max(0, Math.min(100, Math.round(((h - root.insetBottom - root.marginV) / h) * 100.0)));
+    }
+    readonly property real safeLeftPercent: {
+        let w = dragBox ? dragBox.availW : 0;
+        if (w <= 0) return 5;
+        return Math.max(0, Math.min(100, Math.round(((root.insetLeft + root.marginH) / w) * 100.0)));
+    }
+    readonly property real safeRightPercent: {
+        let w = dragBox ? dragBox.availW : 0;
+        if (w <= 0) return 95;
+        return Math.max(0, Math.min(100, Math.round(((w - root.insetRight - root.marginH) / w) * 100.0)));
+    }
 
     readonly property real usableX: 0
     readonly property real usableY: 0
@@ -269,7 +292,7 @@ Item {
 
                     if (root.showBar) {
                         if (root.barPosition === "top") {
-                            let barBottom = barPreviewBox.height;
+                            let barBottom = barPreviewBox.height + root.marginV;
                             let diff = Math.abs(rawY - barBottom);
                             if (diff < bestDy) {
                                 bestDy = diff;
@@ -277,7 +300,7 @@ Item {
                                 guideY = barBottom;
                             }
                         } else if (root.barPosition === "bottom") {
-                            let barTop = screenFrame.height - barPreviewBox.height;
+                            let barTop = screenFrame.height - barPreviewBox.height - root.marginV;
                             let diff = Math.abs((rawY + dragBox.height) - barTop);
                             if (diff < bestDy) {
                                 bestDy = diff;
@@ -285,7 +308,7 @@ Item {
                                 guideY = barTop;
                             }
                         } else if (root.barPosition === "left") {
-                            let barRight = barPreviewBox.width;
+                            let barRight = barPreviewBox.width + root.marginH;
                             let diff = Math.abs(rawX - barRight);
                             if (diff < bestDx) {
                                 bestDx = diff;
@@ -293,12 +316,54 @@ Item {
                                 guideX = barRight;
                             }
                         } else if (root.barPosition === "right") {
-                            let barLeft = screenFrame.width - barPreviewBox.width;
+                            let barLeft = screenFrame.width - barPreviewBox.width - root.marginH;
                             let diff = Math.abs((rawX + dragBox.width) - barLeft);
                             if (diff < bestDx) {
                                 bestDx = diff;
                                 finalX = barLeft - dragBox.width;
                                 guideX = barLeft;
+                            }
+                        }
+                    }
+
+                    if (root.marginV > 0) {
+                        if (!root.showBar || root.barPosition !== "top") {
+                            let topEdge = root.marginV;
+                            let diff = Math.abs(rawY - topEdge);
+                            if (diff < bestDy) {
+                                bestDy = diff;
+                                finalY = topEdge;
+                                guideY = topEdge;
+                            }
+                        }
+                        if (!root.showBar || root.barPosition !== "bottom") {
+                            let bottomEdge = screenFrame.height - root.marginV;
+                            let diff = Math.abs((rawY + dragBox.height) - bottomEdge);
+                            if (diff < bestDy) {
+                                bestDy = diff;
+                                finalY = bottomEdge - dragBox.height;
+                                guideY = bottomEdge;
+                            }
+                        }
+                    }
+
+                    if (root.marginH > 0) {
+                        if (!root.showBar || root.barPosition !== "left") {
+                            let leftEdge = root.marginH;
+                            let diff = Math.abs(rawX - leftEdge);
+                            if (diff < bestDx) {
+                                bestDx = diff;
+                                finalX = leftEdge;
+                                guideX = leftEdge;
+                            }
+                        }
+                        if (!root.showBar || root.barPosition !== "right") {
+                            let rightEdge = screenFrame.width - root.marginH;
+                            let diff = Math.abs((rawX + dragBox.width) - rightEdge);
+                            if (diff < bestDx) {
+                                bestDx = diff;
+                                finalX = rightEdge - dragBox.width;
+                                guideX = rightEdge;
                             }
                         }
                     }

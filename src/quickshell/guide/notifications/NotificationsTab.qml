@@ -24,11 +24,36 @@ Item {
     property bool gridEnabled: false
     property bool showBarBox: true
 
-    readonly property int presetTopV: 0
-    readonly property int presetBottomV: 100
-    readonly property int presetLeftH: 0
-    readonly property int presetRightH: 100
+    readonly property int presetTopV: screenSelector ? screenSelector.safeTopPercent : 5
+    readonly property int presetBottomV: screenSelector ? screenSelector.safeBottomPercent : 95
+    readonly property int presetLeftH: screenSelector ? screenSelector.safeLeftPercent : 5
+    readonly property int presetRightH: screenSelector ? screenSelector.safeRightPercent : 95
     readonly property int presetCenterH: 50
+
+    onPresetTopVChanged: {
+        if (position !== "custom" && position.indexOf("top") !== -1) {
+            verticalPosition = presetTopV;
+            if (screenSelector) screenSelector.verticalPosition = presetTopV;
+        }
+    }
+    onPresetBottomVChanged: {
+        if (position !== "custom" && position.indexOf("bottom") !== -1) {
+            verticalPosition = presetBottomV;
+            if (screenSelector) screenSelector.verticalPosition = presetBottomV;
+        }
+    }
+    onPresetLeftHChanged: {
+        if (position !== "custom" && position.indexOf("left") !== -1) {
+            horizontalPosition = presetLeftH;
+            if (screenSelector) screenSelector.horizontalPosition = presetLeftH;
+        }
+    }
+    onPresetRightHChanged: {
+        if (position !== "custom" && position.indexOf("right") !== -1) {
+            horizontalPosition = presetRightH;
+            if (screenSelector) screenSelector.horizontalPosition = presetRightH;
+        }
+    }
 
     property var defaultNotificationSettings: ({
         "dnd": false,
@@ -52,38 +77,50 @@ Item {
     property bool dnd: notifSettings && notifSettings.dnd !== undefined ? notifSettings.dnd : false
     property string position: notifSettings && notifSettings.position !== undefined ? notifSettings.position : "top right"
     property int horizontalPosition: {
-        if (notifSettings && notifSettings.horizontalPosition !== undefined) return notifSettings.horizontalPosition;
-        if (notifSettings && typeof notifSettings.position === "string") {
-            if (notifSettings.position.indexOf("left") !== -1) return presetLeftH;
-            if (notifSettings.position.indexOf("center") !== -1) return presetCenterH;
-            if (notifSettings.position.indexOf("right") !== -1) return presetRightH;
+        if (position !== "custom") {
+            if (position.indexOf("left") !== -1) return presetLeftH;
+            if (position.indexOf("center") !== -1) return presetCenterH;
+            return presetRightH;
         }
+        if (notifSettings && notifSettings.horizontalPosition !== undefined) return notifSettings.horizontalPosition;
         return presetRightH;
     }
     property int verticalPosition: {
-        if (notifSettings && notifSettings.verticalPosition !== undefined) return notifSettings.verticalPosition;
-        if (notifSettings && typeof notifSettings.position === "string") {
-            if (notifSettings.position.indexOf("bottom") !== -1) return presetBottomV;
-            if (notifSettings.position.indexOf("top") !== -1) return presetTopV;
+        if (position !== "custom") {
+            if (position.indexOf("bottom") !== -1) return presetBottomV;
+            return presetTopV;
         }
+        if (notifSettings && notifSettings.verticalPosition !== undefined) return notifSettings.verticalPosition;
         return presetTopV;
     }
     property bool soundEnabled: notifSettings && notifSettings.sound !== undefined ? notifSettings.sound : true
     property string selectedSound: notifSettings && notifSettings.soundFile !== undefined ? notifSettings.soundFile : ""
     property bool showEmptyGraphic: notifSettings && notifSettings.showEmptyGraphic !== undefined ? notifSettings.showEmptyGraphic : true
 
+    function getPresetIndex(h, v) {
+        if (Math.abs(v - presetTopV) <= 2 && Math.abs(h - presetRightH) <= 2) return 0;
+        if (Math.abs(v - presetTopV) <= 2 && Math.abs(h - presetCenterH) <= 2) return 1;
+        if (Math.abs(v - presetTopV) <= 2 && Math.abs(h - presetLeftH) <= 2) return 2;
+        if (Math.abs(v - presetBottomV) <= 2 && Math.abs(h - presetRightH) <= 2) return 3;
+        if (Math.abs(v - presetBottomV) <= 2 && Math.abs(h - presetCenterH) <= 2) return 4;
+        if (Math.abs(v - presetBottomV) <= 2 && Math.abs(h - presetLeftH) <= 2) return 5;
+        return -1;
+    }
+
+    function getPosStringFromIndex(index) {
+        if (index === 0) return "top right";
+        if (index === 1) return "top center";
+        if (index === 2) return "top left";
+        if (index === 3) return "bottom right";
+        if (index === 4) return "bottom center";
+        if (index === 5) return "bottom left";
+        return "custom";
+    }
+
     readonly property bool isCustomPos: {
         if (position === "custom") return true;
-        let h = horizontalPosition;
-        let v = verticalPosition;
-        return !(
-            (h === presetRightH && v === presetTopV) ||
-            (h === presetCenterH && v === presetTopV) ||
-            (h === presetLeftH && v === presetTopV) ||
-            (h === presetRightH && v === presetBottomV) ||
-            (h === presetCenterH && v === presetBottomV) ||
-            (h === presetLeftH && v === presetBottomV)
-        );
+        let validPresets = ["top right", "top center", "top left", "bottom right", "bottom center", "bottom left"];
+        return validPresets.indexOf(position) === -1;
     }
 
     onIsCustomPosChanged: {
@@ -134,8 +171,13 @@ Item {
             : notificationsTabRoot.defaultNotificationSettings;
         notificationsTabRoot.dnd = s.dnd !== undefined ? s.dnd : false;
         notificationsTabRoot.position = s.position !== undefined ? s.position : "top right";
-        notificationsTabRoot.horizontalPosition = s.horizontalPosition !== undefined ? s.horizontalPosition : (s.position && s.position.indexOf("left") !== -1 ? presetLeftH : (s.position && s.position.indexOf("center") !== -1 ? presetCenterH : presetRightH));
-        notificationsTabRoot.verticalPosition = s.verticalPosition !== undefined ? s.verticalPosition : (s.position && s.position.indexOf("bottom") !== -1 ? presetBottomV : presetTopV);
+        if (notificationsTabRoot.position !== "custom") {
+            notificationsTabRoot.horizontalPosition = notificationsTabRoot.position.indexOf("left") !== -1 ? presetLeftH : (notificationsTabRoot.position.indexOf("center") !== -1 ? presetCenterH : presetRightH);
+            notificationsTabRoot.verticalPosition = notificationsTabRoot.position.indexOf("bottom") !== -1 ? presetBottomV : presetTopV;
+        } else {
+            notificationsTabRoot.horizontalPosition = s.horizontalPosition !== undefined ? s.horizontalPosition : presetRightH;
+            notificationsTabRoot.verticalPosition = s.verticalPosition !== undefined ? s.verticalPosition : presetTopV;
+        }
         if (screenSelector) {
             screenSelector.horizontalPosition = notificationsTabRoot.horizontalPosition;
             screenSelector.verticalPosition = notificationsTabRoot.verticalPosition;
@@ -422,15 +464,13 @@ Item {
                                 ]
                                 currentIndex: {
                                     if (notificationsTabRoot.isCustomPos) return -1;
-                                    let v = notificationsTabRoot.verticalPosition;
-                                    let h = notificationsTabRoot.horizontalPosition;
-                                    if (v === notificationsTabRoot.presetTopV && h === notificationsTabRoot.presetRightH) return 0;
-                                    if (v === notificationsTabRoot.presetTopV && h === notificationsTabRoot.presetCenterH) return 1;
-                                    if (v === notificationsTabRoot.presetTopV && h === notificationsTabRoot.presetLeftH) return 2;
-                                    if (v === notificationsTabRoot.presetBottomV && h === notificationsTabRoot.presetRightH) return 3;
-                                    if (v === notificationsTabRoot.presetBottomV && h === notificationsTabRoot.presetCenterH) return 4;
-                                    if (v === notificationsTabRoot.presetBottomV && h === notificationsTabRoot.presetLeftH) return 5;
-                                    return -1;
+                                    if (notificationsTabRoot.position === "top right") return 0;
+                                    if (notificationsTabRoot.position === "top center") return 1;
+                                    if (notificationsTabRoot.position === "top left") return 2;
+                                    if (notificationsTabRoot.position === "bottom right") return 3;
+                                    if (notificationsTabRoot.position === "bottom center") return 4;
+                                    if (notificationsTabRoot.position === "bottom left") return 5;
+                                    return notificationsTabRoot.getPresetIndex(notificationsTabRoot.horizontalPosition, notificationsTabRoot.verticalPosition);
                                 }
                                 accentColor: ThemeBackend.mauve
                                 baseColor: ThemeBackend.surface0
@@ -454,15 +494,13 @@ Item {
                                 property: "currentIndex"
                                 value: {
                                     if (notificationsTabRoot.isCustomPos) return -1;
-                                    let v = notificationsTabRoot.verticalPosition;
-                                    let h = notificationsTabRoot.horizontalPosition;
-                                    if (v === notificationsTabRoot.presetTopV && h === notificationsTabRoot.presetRightH) return 0;
-                                    if (v === notificationsTabRoot.presetTopV && h === notificationsTabRoot.presetCenterH) return 1;
-                                    if (v === notificationsTabRoot.presetTopV && h === notificationsTabRoot.presetLeftH) return 2;
-                                    if (v === notificationsTabRoot.presetBottomV && h === notificationsTabRoot.presetRightH) return 3;
-                                    if (v === notificationsTabRoot.presetBottomV && h === notificationsTabRoot.presetCenterH) return 4;
-                                    if (v === notificationsTabRoot.presetBottomV && h === notificationsTabRoot.presetLeftH) return 5;
-                                    return -1;
+                                    if (notificationsTabRoot.position === "top right") return 0;
+                                    if (notificationsTabRoot.position === "top center") return 1;
+                                    if (notificationsTabRoot.position === "top left") return 2;
+                                    if (notificationsTabRoot.position === "bottom right") return 3;
+                                    if (notificationsTabRoot.position === "bottom center") return 4;
+                                    if (notificationsTabRoot.position === "bottom left") return 5;
+                                    return notificationsTabRoot.getPresetIndex(notificationsTabRoot.horizontalPosition, notificationsTabRoot.verticalPosition);
                                 }
                             }
                         }
@@ -562,25 +600,30 @@ Item {
                                 verticalPosition: notificationsTabRoot.verticalPosition
                                 gridEnabled: notificationsTabRoot.gridEnabled
                                 showBar: notificationsTabRoot.showBarBox
+                                marginV: rootObj.s(12)
+                                marginH: rootObj.s(16)
                                 dragWidth: rootObj.s(170)
                                 dragHeight: rootObj.s(48)
 
                                 onPositionChanged: (hPos, vPos) => {
-                                    notificationsTabRoot.horizontalPosition = hPos;
-                                    notificationsTabRoot.verticalPosition = vPos;
-                                    notificationsTabRoot.position = "custom";
-                                    posDropdown.currentIndex = -1;
+                                    let h = Math.round(hPos);
+                                    let v = Math.round(vPos);
+                                    notificationsTabRoot.horizontalPosition = h;
+                                    notificationsTabRoot.verticalPosition = v;
+                                    let idx = notificationsTabRoot.getPresetIndex(h, v);
+                                    notificationsTabRoot.position = idx !== -1 ? notificationsTabRoot.getPosStringFromIndex(idx) : "custom";
                                     debounceTimer.restart();
                                 }
 
                                 onDragFinished: {
                                     debounceTimer.stop();
-                                    notificationsTabRoot.position = "custom";
-                                    posDropdown.currentIndex = -1;
+                                    let idx = notificationsTabRoot.getPresetIndex(notificationsTabRoot.horizontalPosition, notificationsTabRoot.verticalPosition);
+                                    let posStr = idx !== -1 ? notificationsTabRoot.getPosStringFromIndex(idx) : "custom";
+                                    notificationsTabRoot.position = posStr;
                                     let current = JSON.parse(JSON.stringify(Config.getSetting("notifications", defaultNotificationSettings) || defaultNotificationSettings));
                                     current.horizontalPosition = notificationsTabRoot.horizontalPosition;
                                     current.verticalPosition = notificationsTabRoot.verticalPosition;
-                                    current.position = "custom";
+                                    current.position = posStr;
                                     Config.setSetting("notifications", current);
                                     notificationsTabRoot.notifSettings = current;
                                 }
