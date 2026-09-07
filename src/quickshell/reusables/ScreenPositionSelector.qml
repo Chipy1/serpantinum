@@ -54,10 +54,10 @@ Item {
     readonly property real insetLeft: (root.showBar && root.barPosition === "left") ? barPreviewBox.width : 0
     readonly property real insetRight: (root.showBar && root.barPosition === "right") ? barPreviewBox.width : 0
 
-    readonly property real usableX: root.insetLeft
-    readonly property real usableY: root.insetTop
-    readonly property real usableW: Math.max(1, screenFrame.width - root.insetLeft - root.insetRight)
-    readonly property real usableH: Math.max(1, screenFrame.height - root.insetTop - root.insetBottom)
+    readonly property real usableX: 0
+    readonly property real usableY: 0
+    readonly property real usableW: screenFrame.width
+    readonly property real usableH: screenFrame.height
 
     default property alias contentData: dragTargetContainer.data
 
@@ -185,8 +185,6 @@ Item {
             onPressed: mouse => {
                 let availW = dragBox.availW;
                 let availH = dragBox.availH;
-                let usableX = root.usableX;
-                let usableY = root.usableY;
 
                 if (isOverBox) {
                     isDragging = true;
@@ -196,17 +194,17 @@ Item {
                 } else {
                     let rawX = mouse.x - dragBox.width / 2.0;
                     let rawY = mouse.y - dragBox.height / 2.0;
-                    let clampedX = Math.max(usableX, Math.min(usableX + availW, rawX));
-                    let clampedY = Math.max(usableY, Math.min(usableY + availH, rawY));
+                    let clampedX = Math.max(0, Math.min(availW, rawX));
+                    let clampedY = Math.max(0, Math.min(availH, rawY));
 
                     if (root.gridEnabled) {
                         let gridStep = root.s(16);
-                        clampedX = Math.max(usableX, Math.min(usableX + availW, Math.round((clampedX - usableX) / gridStep) * gridStep + usableX));
-                        clampedY = Math.max(usableY, Math.min(usableY + availH, Math.round((clampedY - usableY) / gridStep) * gridStep + usableY));
+                        clampedX = Math.max(0, Math.min(availW, Math.round(clampedX / gridStep) * gridStep));
+                        clampedY = Math.max(0, Math.min(availH, Math.round(clampedY / gridStep) * gridStep));
                     }
 
-                    let newH = Math.max(0, Math.min(100, ((clampedX - usableX) / availW) * 100.0));
-                    let newV = Math.max(0, Math.min(100, ((clampedY - usableY) / availH) * 100.0));
+                    let newH = Math.max(0, Math.min(100, (clampedX / availW) * 100.0));
+                    let newV = Math.max(0, Math.min(100, (clampedY / availH) * 100.0));
                     root.horizontalPosition = newH;
                     root.verticalPosition = newV;
                     root.positionChanged(newH, newV);
@@ -227,10 +225,6 @@ Item {
 
                 let availW = dragBox.availW;
                 let availH = dragBox.availH;
-                let usableX = root.usableX;
-                let usableY = root.usableY;
-                let usableW = root.usableW;
-                let usableH = root.usableH;
 
                 let rawX = mouse.x - dragOffsetX;
                 let rawY = mouse.y - dragOffsetY;
@@ -242,8 +236,8 @@ Item {
 
                 if (root.gridEnabled) {
                     let gridStep = root.s(16);
-                    finalX = Math.round((rawX - usableX) / gridStep) * gridStep + usableX;
-                    finalY = Math.round((rawY - usableY) / gridStep) * gridStep + usableY;
+                    finalX = Math.round(rawX / gridStep) * gridStep;
+                    finalY = Math.round(rawY / gridStep) * gridStep;
                 } else {
                     let snapThreshold = root.s(5);
                     let bestDx = snapThreshold;
@@ -252,8 +246,8 @@ Item {
                     let dXEdges = [rawX, rawX + dragBox.width / 2.0, rawX + dragBox.width];
                     let dYEdges = [rawY, rawY + dragBox.height / 2.0, rawY + dragBox.height];
 
-                    let screenCenterX = usableX + usableW / 2.0;
-                    let screenCenterY = usableY + usableH / 2.0;
+                    let screenCenterX = screenFrame.width / 2.0;
+                    let screenCenterY = screenFrame.height / 2.0;
 
                     for (let j = 0; j < dXEdges.length; j++) {
                         let diff = Math.abs(dXEdges[j] - screenCenterX);
@@ -272,16 +266,52 @@ Item {
                             guideY = screenCenterY;
                         }
                     }
+
+                    if (root.showBar) {
+                        if (root.barPosition === "top") {
+                            let barBottom = barPreviewBox.height;
+                            let diff = Math.abs(rawY - barBottom);
+                            if (diff < bestDy) {
+                                bestDy = diff;
+                                finalY = barBottom;
+                                guideY = barBottom;
+                            }
+                        } else if (root.barPosition === "bottom") {
+                            let barTop = screenFrame.height - barPreviewBox.height;
+                            let diff = Math.abs((rawY + dragBox.height) - barTop);
+                            if (diff < bestDy) {
+                                bestDy = diff;
+                                finalY = barTop - dragBox.height;
+                                guideY = barTop;
+                            }
+                        } else if (root.barPosition === "left") {
+                            let barRight = barPreviewBox.width;
+                            let diff = Math.abs(rawX - barRight);
+                            if (diff < bestDx) {
+                                bestDx = diff;
+                                finalX = barRight;
+                                guideX = barRight;
+                            }
+                        } else if (root.barPosition === "right") {
+                            let barLeft = screenFrame.width - barPreviewBox.width;
+                            let diff = Math.abs((rawX + dragBox.width) - barLeft);
+                            if (diff < bestDx) {
+                                bestDx = diff;
+                                finalX = barLeft - dragBox.width;
+                                guideX = barLeft;
+                            }
+                        }
+                    }
                 }
 
-                finalX = Math.max(usableX, Math.min(usableX + availW, finalX));
-                finalY = Math.max(usableY, Math.min(usableY + availH, finalY));
+                finalX = Math.max(0, Math.min(availW, finalX));
+                finalY = Math.max(0, Math.min(availH, finalY));
 
                 screenFrame.activeGuideX = guideX;
                 screenFrame.activeGuideY = guideY;
 
-                let newPctX = Math.max(0, Math.min(100, ((finalX - usableX) / availW) * 100.0));
-                let newPctY = Math.max(0, Math.min(100, ((finalY - usableY) / availH) * 100.0));
+                let newPctX = Math.max(0, Math.min(100, (finalX / availW) * 100.0));
+                let newPctY = Math.max(0, Math.min(100, (finalY / availH) * 100.0));
 
                 if (root.horizontalPosition !== newPctX || root.verticalPosition !== newPctY) {
                     root.horizontalPosition = newPctX;
@@ -315,11 +345,11 @@ Item {
             width: root.dragWidth
             height: root.dragHeight
 
-            readonly property real availW: Math.max(1, root.usableW - width)
-            readonly property real availH: Math.max(1, root.usableH - height)
+            readonly property real availW: Math.max(1, screenFrame.width - width)
+            readonly property real availH: Math.max(1, screenFrame.height - height)
 
-            x: root.usableX + Math.max(0, Math.min(availW, availW * (root.horizontalPosition / 100.0)))
-            y: root.usableY + Math.max(0, Math.min(availH, availH * (root.verticalPosition / 100.0)))
+            x: Math.max(0, Math.min(availW, availW * (root.horizontalPosition / 100.0)))
+            y: Math.max(0, Math.min(availH, availH * (root.verticalPosition / 100.0)))
 
             scale: frameMa.isDragging ? 1.04 : (frameMa.isOverBox ? 1.02 : 1.0)
             Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutQuint } }
