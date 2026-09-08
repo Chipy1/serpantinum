@@ -571,8 +571,8 @@ Variants {
 
             Item {
                 id: dockMaskArea
-                x: dockContainer.x - (dockContainer.isAttached && !dockWindow.isVertical ? dockWindow.outerCornerRadius : 0) + dockContainer.transform[0].x
-                y: dockContainer.y - (dockContainer.isAttached && dockWindow.isVertical ? dockWindow.outerCornerRadius : 0) + dockContainer.transform[0].y
+                x: dockContainer.x - (dockContainer.isAttached && !dockWindow.isVertical ? dockWindow.outerCornerRadius : 0) + dockTransform.x
+                y: dockContainer.y - (dockContainer.isAttached && dockWindow.isVertical ? dockWindow.outerCornerRadius : 0) + dockTransform.y
                 width: dockContainer.width + (dockContainer.isAttached && !dockWindow.isVertical ? dockWindow.outerCornerRadius * 2 : 0)
                 height: dockContainer.height + (dockContainer.isAttached && dockWindow.isVertical ? dockWindow.outerCornerRadius * 2 : 0)
             }
@@ -737,6 +737,7 @@ Variants {
                 }
 
                 transform: Translate {
+                    id: dockTransform
                     x: (!dockWindow.sameSideAsBar && dockWindow.isVertical) ? (dockWindow.isRevealed ? 0 : dockContainer.hideOffset) : 0
                     y: (!dockWindow.sameSideAsBar && !dockWindow.isVertical) ? (dockWindow.isRevealed ? 0 : dockContainer.hideOffset) : 0
 
