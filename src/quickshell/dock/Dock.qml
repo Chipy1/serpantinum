@@ -157,7 +157,8 @@ Variants {
                 return rawElementSize;
             }
 
-            property bool dockFloating: rawDockSettings.floating !== undefined ? rawDockSettings.floating : false
+            property bool rawDockFloating: rawDockSettings.floating !== undefined ? rawDockSettings.floating : false
+            property bool dockFloating: rawDockFloating || (sameSideAsBar && !isBarSolid)
             property real dockOpacitySetting: {
                 if (rawDockSettings.opacity !== undefined) return Number(rawDockSettings.opacity);
                 if (rawDockSettings.transparency !== undefined) return Math.max(0, 100 - Number(rawDockSettings.transparency));
@@ -166,7 +167,7 @@ Variants {
             readonly property real dockOpacity: Math.max(0.0, Math.min(1.0, dockOpacitySetting / 100.0))
             property real floatingMargin: dockFloating ? s(8) : 0
             Behavior on floatingMargin {
-                enabled: dockWindow.initialized
+                enabled: dockWindow.initialized && !dockWindow.positionChanging
                 NumberAnimation { duration: 280; easing.type: Easing.OutCubic }
             }
             property bool autohide: rawDockSettings.autohide !== undefined ? rawDockSettings.autohide : false
@@ -176,7 +177,7 @@ Variants {
 
             property real editMargin: (editMode && !dockFloating) ? s(20) : 0
             Behavior on editMargin {
-                enabled: dockWindow.initialized
+                enabled: dockWindow.initialized && !dockWindow.positionChanging
                 NumberAnimation { duration: 320; easing.type: Easing.OutBack; easing.overshoot: 1.15 }
             }
             readonly property real effectiveMargin: floatingMargin + editMargin
@@ -188,12 +189,13 @@ Variants {
 
             Timer {
                 id: positionChangeTimer
-                interval: 200
+                interval: 300
                 onTriggered: dockWindow.positionChanging = false
             }
 
             onDockPositionChanged: {
                 dockWindow.positionChanging = true;
+                dockContainer.scrollIndex = 0;
                 positionChangeTimer.restart();
             }
 
@@ -207,6 +209,19 @@ Variants {
             property string barPosition: (rawBarSettings && rawBarSettings.position !== undefined) ? rawBarSettings.position : "top"
             property bool barAutohide: (rawBarSettings && rawBarSettings.autohide !== undefined) ? Boolean(rawBarSettings.autohide) : false
             property real barHeight: (rawBarSettings && rawBarSettings.height !== undefined) ? s(rawBarSettings.height) : s(40)
+
+            property string barStyle: {
+                let dummy = configRevision;
+                if (typeof Config === "undefined" || !Config.rawSettings || !Config.rawSettings.bar) return "modular";
+                let s = Config.rawSettings.bar.style;
+                if (typeof s === "string") return s;
+                if (s && typeof s === "object") {
+                    if (s.fill || s.mode === "fill") return "fill";
+                    if (s.solid || s.mode === "solid") return "solid";
+                }
+                return "modular";
+            }
+            readonly property bool isBarSolid: barStyle === "solid" || barStyle === "fill"
 
             readonly property bool isOsdFullscreen: (typeof OsdController !== "undefined") ? Boolean(OsdController.isFullscreen) : false
             readonly property bool isToplevelFullscreen: {
@@ -233,7 +248,8 @@ Variants {
 
             readonly property bool isBarEffectivelyHidden: barAutohide || isFullscreenActive
             readonly property bool sameSideAsBar: (dockPosition === barPosition) && !isBarEffectivelyHidden
-            readonly property real barOffset: sameSideAsBar ? barHeight : 0
+            readonly property real barMarginOffset: (!isBarSolid && !barAutohide) ? s(4) : 0
+            readonly property real barOffset: sameSideAsBar ? (barHeight + barMarginOffset) : 0
 
             readonly property bool isVertical: dockPosition === "left" || dockPosition === "right"
 
@@ -586,11 +602,11 @@ Variants {
             Item {
                 id: dockContainer
 
-                readonly property bool isAttached: !dockWindow.dockFloating && !dockWindow.editMode
+                readonly property bool isAttached: !dockWindow.dockFloating && !dockWindow.editMode && !(dockWindow.sameSideAsBar && !dockWindow.isBarSolid)
                 property real outerCornerProgress: isAttached ? 1.0 : 0.0
 
                 Behavior on outerCornerProgress {
-                    enabled: dockWindow.initialized
+                    enabled: dockWindow.initialized && !dockWindow.positionChanging
                     NumberAnimation {
                         duration: dockContainer.isAttached ? 240 : 320
                         easing.type: dockContainer.isAttached ? Easing.OutQuad : Easing.InQuad
@@ -602,7 +618,7 @@ Variants {
                     : Math.max(0, Math.min(dockWindow.outerCornerRadius, (dockWindow.isVertical ? width : height) * 0.5))
 
                 Behavior on dynamicCornerRadius {
-                    enabled: dockWindow.initialized
+                    enabled: dockWindow.initialized && !dockWindow.positionChanging
                     NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
                 }
 
@@ -670,17 +686,17 @@ Variants {
                 property real baseHeight: Math.round(dockWindow.isVertical ? fullContentLength : fullThickness)
 
                 Behavior on baseWidth {
-                    enabled: dockWindow.initialized
+                    enabled: dockWindow.initialized && !dockWindow.positionChanging
                     NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
                 }
                 Behavior on baseHeight {
-                    enabled: dockWindow.initialized
+                    enabled: dockWindow.initialized && !dockWindow.positionChanging
                     NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
                 }
 
                 property real revealProgress: dockWindow.isRevealed ? 1.0 : 0.0
                 Behavior on revealProgress {
-                    enabled: dockWindow.initialized
+                    enabled: dockWindow.initialized && !dockWindow.positionChanging
                     NumberAnimation {
                         duration: dockWindow.isRevealed ? 240 : 180
                         easing.type: dockWindow.isRevealed ? Easing.OutCubic : Easing.InCubic
@@ -1073,13 +1089,20 @@ Variants {
 
                 Item {
                     id: dockViewport
-                    anchors.horizontalCenter: (!dockWindow.sameSideAsBar && !dockWindow.isVertical) ? parent.horizontalCenter : undefined
-                    anchors.verticalCenter: (!dockWindow.sameSideAsBar && dockWindow.isVertical) ? parent.verticalCenter : undefined
-                    anchors.top: (!dockWindow.isVertical && dockWindow.sameSideAsBar && dockWindow.dockPosition === "top") ? parent.top : undefined
-                    anchors.bottom: (!dockWindow.isVertical && dockWindow.sameSideAsBar && dockWindow.dockPosition === "bottom") ? parent.bottom : undefined
-                    anchors.left: (dockWindow.isVertical && dockWindow.sameSideAsBar && dockWindow.dockPosition === "left") ? parent.left : undefined
-                    anchors.right: (dockWindow.isVertical && dockWindow.sameSideAsBar && dockWindow.dockPosition === "right") ? parent.right : undefined
-                    anchors.centerIn: (!dockWindow.sameSideAsBar) ? parent : undefined
+                    x: {
+                        if (dockWindow.sameSideAsBar && dockWindow.isVertical) {
+                            if (dockWindow.dockPosition === "left") return 0;
+                            if (dockWindow.dockPosition === "right") return Math.round(dockContainer.width - width);
+                        }
+                        return Math.round((dockContainer.width - width) / 2);
+                    }
+                    y: {
+                        if (dockWindow.sameSideAsBar && !dockWindow.isVertical) {
+                            if (dockWindow.dockPosition === "top") return 0;
+                            if (dockWindow.dockPosition === "bottom") return Math.round(dockContainer.height - height);
+                        }
+                        return Math.round((dockContainer.height - height) / 2);
+                    }
 
                     width: dockWindow.isVertical ? Math.min(dockContainer.width, dockContainer.dockThickness + dockWindow.s(16)) : dockContainer.dockContentLength
                     height: dockWindow.isVertical ? dockContainer.dockContentLength : Math.min(dockContainer.height, dockContainer.dockThickness + dockWindow.s(16))
@@ -1092,48 +1115,56 @@ Variants {
                         rows: dockWindow.isVertical ? Math.max(1, dockContainer.totalItemCount) : 1
                         columnSpacing: dockContainer.itemSpacing
                         rowSpacing: dockContainer.itemSpacing
+                        width: implicitWidth
+                        height: implicitHeight
 
                         Behavior on columnSpacing {
-                            enabled: dockWindow.initialized
+                            enabled: dockWindow.initialized && !dockWindow.positionChanging
                             NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
                         }
                         Behavior on rowSpacing {
-                            enabled: dockWindow.initialized
+                            enabled: dockWindow.initialized && !dockWindow.positionChanging
                             NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
                         }
 
                         x: {
                             if (dockWindow.isVertical) {
-                                if (dockWindow.dockPosition === "right") {
+                                if (dockWindow.sameSideAsBar && dockWindow.dockPosition === "right") {
                                     return Math.round(dockViewport.width - width - dockWindow.s(8));
                                 }
-                                return Math.round(dockWindow.s(8));
+                                if (dockWindow.sameSideAsBar && dockWindow.dockPosition === "left") {
+                                    return Math.round(dockWindow.s(8));
+                                }
+                                return Math.round((dockViewport.width - width) / 2);
                             }
                             if (!dockWindow.enableScrolling || dockContainer.totalItemCount <= dockContainer.effectiveItemCount) {
-                                return Math.round((dockViewport.width - width) / 2);
+                                return 0;
                             }
                             return Math.round(-dockContainer.scrollIndex * dockContainer.itemStep);
                         }
 
                         y: {
                             if (!dockWindow.isVertical) {
-                                if (dockWindow.dockPosition === "bottom") {
+                                if (dockWindow.sameSideAsBar && dockWindow.dockPosition === "bottom") {
                                     return Math.round(dockViewport.height - height - dockWindow.s(8));
                                 }
-                                return Math.round(dockWindow.s(8));
+                                if (dockWindow.sameSideAsBar && dockWindow.dockPosition === "top") {
+                                    return Math.round(dockWindow.s(8));
+                                }
+                                return Math.round((dockViewport.height - height) / 2);
                             }
                             if (!dockWindow.enableScrolling || dockContainer.totalItemCount <= dockContainer.effectiveItemCount) {
-                                return Math.round((dockViewport.height - height) / 2);
+                                return 0;
                             }
                             return Math.round(-dockContainer.scrollIndex * dockContainer.itemStep);
                         }
 
                         Behavior on x {
-                            enabled: dockWindow.initialized && dockWindow.enableScrolling && dockContainer.revealProgress >= 0.99
+                            enabled: dockWindow.initialized && dockWindow.enableScrolling && dockContainer.revealProgress >= 0.99 && !dockWindow.positionChanging
                             NumberAnimation { duration: 240; easing.type: Easing.OutCubic }
                         }
                         Behavior on y {
-                            enabled: dockWindow.initialized && dockWindow.enableScrolling && dockContainer.revealProgress >= 0.99
+                            enabled: dockWindow.initialized && dockWindow.enableScrolling && dockContainer.revealProgress >= 0.99 && !dockWindow.positionChanging
                             NumberAnimation { duration: 240; easing.type: Easing.OutCubic }
                         }
 
@@ -1391,11 +1422,11 @@ Variants {
                 z: 100
 
                 Behavior on opacity {
-                    enabled: dockWindow.initialized
+                    enabled: dockWindow.initialized && !dockWindow.positionChanging
                     NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
                 }
                 Behavior on scale {
-                    enabled: dockWindow.initialized
+                    enabled: dockWindow.initialized && !dockWindow.positionChanging
                     NumberAnimation { duration: 280; easing.type: Easing.OutBack; easing.overshoot: 1.1 }
                 }
 
@@ -1411,7 +1442,7 @@ Variants {
                 property real targetPickerHeight: dockWindow.s(70) + (targetItemCount * dockWindow.s(48))
                 property real animatedPickerHeight: targetPickerHeight
                 Behavior on animatedPickerHeight {
-                    enabled: dockWindow.initialized
+                    enabled: dockWindow.initialized && !dockWindow.positionChanging
                     NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
                 }
 
@@ -1452,7 +1483,7 @@ Variants {
                         anchors.fill: parent
                         anchors.margins: dockWindow.s(12)
 
-                        readonly property bool isSearchAtBottom: dockWindow.dockPosition === "bottom"
+                        readonly property bool isSearchAtBottom: dockWindow.dockPosition === "top"
 
                         RowLayout {
                             id: pickerSearchRow
