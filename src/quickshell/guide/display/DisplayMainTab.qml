@@ -680,7 +680,7 @@ Item {
                                     cornerRadius: ThemeBackend.borderRadius
                                     buttonIcon: "󰐥"
                                     iconFontSize: rootObj.s(16)
-                                    accentColor: Qt.Darker(ThemeBackend.surface0, 1.1)
+                                    accentColor: ThemeBackend.surface0
                                     textColor: "#ffffff"
                                 }
 
