@@ -218,6 +218,7 @@ Item {
                 radius: ThemeBackend.borderRadius
                 color: Qt.alpha(ThemeBackend.surface0, 0.4)
                 border.width: 0
+                visible: dockTabRoot.currentEnabled
 
                 RowLayout {
                     id: rowPosLayout
@@ -288,6 +289,7 @@ Item {
                 radius: ThemeBackend.borderRadius
                 color: Qt.alpha(ThemeBackend.surface0, 0.4)
                 border.width: 0
+                visible: dockTabRoot.currentEnabled
 
                 RowLayout {
                     id: rowFloatingLayout
@@ -336,6 +338,7 @@ Item {
                 radius: ThemeBackend.borderRadius
                 color: Qt.alpha(ThemeBackend.surface0, 0.4)
                 border.width: 0
+                visible: dockTabRoot.currentEnabled
 
                 RowLayout {
                     id: rowOpacityLayout
@@ -402,6 +405,7 @@ Item {
                 radius: ThemeBackend.borderRadius
                 color: Qt.alpha(ThemeBackend.surface0, 0.4)
                 border.width: 0
+                visible: dockTabRoot.currentEnabled
 
                 ColumnLayout {
                     id: sizeCol
@@ -519,6 +523,7 @@ Item {
                 radius: ThemeBackend.borderRadius
                 color: Qt.alpha(ThemeBackend.surface0, 0.4)
                 border.width: 0
+                visible: dockTabRoot.currentEnabled
 
                 ColumnLayout {
                     id: scrollingCol
@@ -656,6 +661,7 @@ Item {
                 radius: ThemeBackend.borderRadius
                 color: Qt.alpha(ThemeBackend.surface0, 0.4)
                 border.width: 0
+                visible: dockTabRoot.currentEnabled
 
                 ColumnLayout {
                     id: autohideCol
@@ -796,6 +802,7 @@ Item {
                 color: Qt.alpha(ThemeBackend.surface0, 0.4)
                 border.color: Qt.alpha(ThemeBackend.surface1, 0.4)
                 border.width: 1
+                visible: dockTabRoot.currentEnabled
 
                 implicitHeight: cardLayout.implicitHeight + rootObj.s(24)
 
