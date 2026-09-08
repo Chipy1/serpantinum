@@ -578,6 +578,14 @@
       "visible_elements": {
         "title": "Visible elements",
         "desc": "Number of dock items visible at the same time"
+      },
+      "hover_scale": {
+        "title": "Hover scale effect",
+        "desc": "Magnification level when hovering over dock items"
+      },
+      "cascade_scale": {
+        "title": "Scale nearest elements",
+        "desc": "Cascading magnification on neighboring icons"
       }
     }
   },

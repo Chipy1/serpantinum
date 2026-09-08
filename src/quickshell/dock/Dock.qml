@@ -12,6 +12,7 @@ Variants {
     model: Quickshell.screens
 
     delegate: Component {
+        id: dockDelegate
         PanelWindow {
             id: dockWindow
             required property var modelData
@@ -55,7 +56,9 @@ Variants {
                 "visibleElements": 7,
                 "scrollingElements": 7,
                 "maxVisibleElements": 7,
-                "maxElements": 7
+                "maxElements": 7,
+                "hoverScale": 120,
+                "cascadeScale": false
             })
 
             property var rawDockSettings: {
@@ -95,6 +98,31 @@ Variants {
             property string dockPosition: rawDockSettings.position !== undefined ? rawDockSettings.position : "bottom"
             property int rawElementSize: rawDockSettings.elementSize !== undefined ? rawDockSettings.elementSize : 44
             property bool overrideBoundsCorrection: rawDockSettings.overrideBoundsCorrection !== undefined ? Boolean(rawDockSettings.overrideBoundsCorrection) : false
+
+            property real dockHoverScaleMultiplier: {
+                let val = undefined;
+                if (rawDockSettings && rawDockSettings.hoverScale !== undefined) {
+                    val = rawDockSettings.hoverScale;
+                } else if (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings["dock.hoverScale"] !== undefined) {
+                    val = Config.rawSettings["dock.hoverScale"];
+                }
+                let parsed = parseFloat(val);
+                if (isNaN(parsed) || parsed < 100) return 1.20;
+                return parsed / 100.0;
+            }
+
+            property bool dockCascadeScale: {
+                let val = undefined;
+                if (rawDockSettings && rawDockSettings.cascadeScale !== undefined) {
+                    val = rawDockSettings.cascadeScale;
+                } else if (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings["dock.cascadeScale"] !== undefined) {
+                    val = Config.rawSettings["dock.cascadeScale"];
+                }
+                if (val === undefined || val === null) return false;
+                if (typeof val === "boolean") return val;
+                if (typeof val === "string") return val.toLowerCase() === "true" || val === "1";
+                return Boolean(val);
+            }
 
             property bool enableScrolling: {
                 let val = undefined;
@@ -196,6 +224,7 @@ Variants {
             onDockPositionChanged: {
                 dockWindow.positionChanging = true;
                 dockContainer.scrollIndex = 0;
+                dockContainer.hoveredItemIndex = -1;
                 positionChangeTimer.restart();
             }
 
@@ -474,6 +503,7 @@ Variants {
             }
 
             onEditModeChanged: {
+                dockContainer.hoveredItemIndex = -1;
                 if (editMode) {
                     loadAllDesktopApps();
                     pickerFocusTimer.restart();
@@ -587,10 +617,10 @@ Variants {
 
             Item {
                 id: dockMaskArea
-                x: dockContainer.x - (dockContainer.isAttached && !dockWindow.isVertical ? dockWindow.outerCornerRadius : 0) + dockTransform.x
-                y: dockContainer.y - (dockContainer.isAttached && dockWindow.isVertical ? dockWindow.outerCornerRadius : 0) + dockTransform.y
-                width: dockContainer.width + (dockContainer.isAttached && !dockWindow.isVertical ? dockWindow.outerCornerRadius * 2 : 0)
-                height: dockContainer.height + (dockContainer.isAttached && dockWindow.isVertical ? dockWindow.outerCornerRadius * 2 : 0)
+                x: dockContainer.x - (dockContainer.isAttached && !dockWindow.isVertical ? dockWindow.outerCornerRadius : 0) + dockTransform.x - dockWindow.s(6)
+                y: dockContainer.y - (dockContainer.isAttached && dockWindow.isVertical ? dockWindow.outerCornerRadius : 0) + dockTransform.y - dockWindow.s(6)
+                width: dockContainer.width + (dockContainer.isAttached && !dockWindow.isVertical ? dockWindow.outerCornerRadius * 2 : 0) + dockWindow.s(12)
+                height: dockContainer.height + (dockContainer.isAttached && dockWindow.isVertical ? dockWindow.outerCornerRadius * 2 : 0) + dockWindow.s(12)
             }
 
             Item {
@@ -637,6 +667,23 @@ Variants {
 
                 property int scrollIndex: 0
                 readonly property int maxScrollIndex: Math.max(0, totalItemCount - effectiveItemCount)
+
+                property int hoveredItemIndex: -1
+
+                Timer {
+                    id: hoverResetTimer
+                    interval: 80
+                    repeat: false
+                    onTriggered: dockContainer.hoveredItemIndex = -1
+                }
+
+                function checkHoverReset() {
+                    hoverResetTimer.restart();
+                }
+
+                function cancelHoverReset() {
+                    hoverResetTimer.stop();
+                }
 
                 onTotalItemCountChanged: {
                     if (scrollIndex > maxScrollIndex) scrollIndex = maxScrollIndex;
@@ -770,6 +817,12 @@ Variants {
                 HoverHandler {
                     id: dockHover
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                    onHoveredChanged: {
+                        if (!hovered) {
+                            dockContainer.hoveredItemIndex = -1;
+                            dockContainer.cancelHoverReset();
+                        }
+                    }
                 }
 
                 function calculateDropIndex(mx, my) {
@@ -1106,7 +1159,7 @@ Variants {
 
                     width: dockWindow.isVertical ? Math.min(dockContainer.width, dockContainer.dockThickness + dockWindow.s(16)) : dockContainer.dockContentLength
                     height: dockWindow.isVertical ? dockContainer.dockContentLength : Math.min(dockContainer.height, dockContainer.dockThickness + dockWindow.s(16))
-                    clip: true
+                    clip: dockWindow.enableScrolling && (dockContainer.totalItemCount > dockContainer.effectiveItemCount)
                     visible: width > 0 && height > 0
 
                     GridLayout {
@@ -1178,7 +1231,7 @@ Variants {
                                 Layout.preferredWidth: dockWindow.s(dockWindow.dockElementSize)
                                 Layout.preferredHeight: dockWindow.s(dockWindow.dockElementSize)
                                 Layout.alignment: Qt.AlignCenter
-                                z: (dockButton.isBeingDragged || dockWindow.dragSourceIndex === index) ? 99999 : 1
+                                z: (dockButton.isBeingDragged || dockWindow.dragSourceIndex === index) ? 99999 : Math.round(btnShape.scale * 100)
 
                                 property int itemIndex: index
                                 property real popScale: 1.0
@@ -1188,6 +1241,82 @@ Variants {
                                 property bool isDropTarget: dockWindow.dropTargetIndex === index && dockWindow.dragSourceIndex !== index
                                 property bool isBeingDragged: btnMa.drag.active
                                 property int btnSize: dockWindow.s(dockWindow.dockElementSize)
+
+                                readonly property bool canHoverScale: !dockWindow.editMode && dockWindow.dragSourceIndex === -1 && !btnMa.drag.active
+                                readonly property real maxHoverScale: dockWindow.dockHoverScaleMultiplier
+                                readonly property real hoverScaleDelta: Math.max(0.0, maxHoverScale - 1.0)
+
+                                property real baseHoverScale: {
+                                    if (!canHoverScale || dockContainer.hoveredItemIndex < 0) return 1.0;
+                                    let diff = Math.abs(dockButton.itemIndex - dockContainer.hoveredItemIndex);
+                                    if (diff === 0) return maxHoverScale;
+                                    if (dockWindow.dockCascadeScale) {
+                                        if (diff === 1) return 1.0 + hoverScaleDelta * 0.45;
+                                        if (diff === 2) return 1.0 + hoverScaleDelta * 0.15;
+                                    }
+                                    return 1.0;
+                                }
+
+                                property real targetScale: {
+                                    let s = baseHoverScale;
+                                    if (btnMa.pressed && canHoverScale) {
+                                        return s > 1.0 ? (s * 1.04) : 1.06;
+                                    }
+                                    return s;
+                                }
+
+                                property real animSpread: {
+                                    if (!canHoverScale || dockContainer.hoveredItemIndex < 0) return 0.0;
+                                    let diff = itemIndex - dockContainer.hoveredItemIndex;
+                                    if (diff === 0) return 0.0;
+                                    let sign = diff > 0 ? 1.0 : -1.0;
+                                    let d = Math.abs(diff);
+                                    let maxAllowedShift = Math.min(dockWindow.s(10), dockButton.btnSize * hoverScaleDelta * 0.65);
+                                    if (dockWindow.dockCascadeScale) {
+                                        let shift = (d === 1) ? (maxAllowedShift * 0.70) : maxAllowedShift;
+                                        return sign * shift;
+                                    } else {
+                                        return (d === 1) ? (sign * maxAllowedShift * 0.45) : 0.0;
+                                    }
+                                }
+
+                                property real animLift: {
+                                    if (!canHoverScale || targetScale <= 1.0) return 0.0;
+                                    let liftProgress = (targetScale - 1.0) / Math.max(0.01, maxHoverScale - 1.0);
+                                    return dockWindow.s(5) * Math.min(1.0, Math.max(0.0, liftProgress));
+                                }
+
+                                property real targetOffsetX: {
+                                    if (dockWindow.isVertical) {
+                                        if (dockWindow.dockPosition === "left") return animLift;
+                                        if (dockWindow.dockPosition === "right") return -animLift;
+                                        return 0.0;
+                                    } else {
+                                        return animSpread;
+                                    }
+                                }
+
+                                property real targetOffsetY: {
+                                    if (dockWindow.isVertical) {
+                                        return animSpread;
+                                    } else {
+                                        if (dockWindow.dockPosition === "bottom") return -animLift;
+                                        if (dockWindow.dockPosition === "top") return animLift;
+                                        return 0.0;
+                                    }
+                                }
+
+                                property real currentOffsetX: btnMa.drag.active ? 0 : targetOffsetX
+                                property real currentOffsetY: btnMa.drag.active ? 0 : targetOffsetY
+
+                                Behavior on currentOffsetX {
+                                    enabled: dockWindow.initialized && !dockWindow.positionChanging
+                                    NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                                }
+                                Behavior on currentOffsetY {
+                                    enabled: dockWindow.initialized && !dockWindow.positionChanging
+                                    NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                                }
 
                                 Rectangle {
                                     anchors.fill: parent
@@ -1217,6 +1346,12 @@ Variants {
                                     width: dockButton.btnSize
                                     height: dockButton.btnSize
                                     z: btnMa.drag.active ? 999999 : 1
+
+                                    transform: Translate {
+                                        id: buttonTransform
+                                        x: dockButton.currentOffsetX
+                                        y: dockButton.currentOffsetY
+                                    }
 
                                     Drag.active: btnMa.drag.active
                                     Drag.source: dockButton
@@ -1249,9 +1384,11 @@ Variants {
                                             ColorAnimation { duration: 180 }
                                         }
 
-                                        scale: (btnMa.pressed ? 1.08 : (btnMa.containsMouse ? 1.04 : 1.0)) * dockButton.popScale
+                                        transformOrigin: Item.Center
+
+                                        scale: dockButton.targetScale * dockButton.popScale
                                         Behavior on scale {
-                                            NumberAnimation { duration: 250; easing.type: Easing.OutQuint }
+                                            NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
                                         }
 
                                         SequentialAnimation {
@@ -1325,6 +1462,19 @@ Variants {
                                         drag.target: floatWrapper
                                         drag.axis: Drag.XAndYAxis
                                         drag.threshold: (dockWindow.editMode || inDragHold) ? 5 : 99999
+
+                                        onEntered: {
+                                            dockContainer.cancelHoverReset();
+                                            if (dockButton.canHoverScale) {
+                                                dockContainer.hoveredItemIndex = dockButton.itemIndex;
+                                            }
+                                        }
+
+                                        onExited: {
+                                            if (dockContainer.hoveredItemIndex === dockButton.itemIndex) {
+                                                dockContainer.checkHoverReset();
+                                            }
+                                        }
 
                                         onPressed: {
                                             inDragHold = false;

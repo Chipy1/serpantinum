@@ -622,6 +622,14 @@
       "visible_elements": {
         "title": "Elementos visibles",
         "desc": "Cantidad de elementos del dock visibles simultáneamente"
+      },
+      "hover_scale": {
+        "title": "Efecto de escala al pasar el cursor",
+        "desc": "Nivel de aumento al pasar el cursor sobre los elementos del dock"
+      },
+      "cascade_scale": {
+        "title": "Escalar elementos cercanos",
+        "desc": "Ampliación en cascada en los iconos contiguos"
       }
     }
   },

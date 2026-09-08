@@ -578,6 +578,14 @@
       "visible_elements": {
         "title": "Phần tử hiển thị",
         "desc": "Số lượng mục dock hiển thị đồng thời"
+      },
+      "hover_scale": {
+        "title": "Hiệu ứng phóng to khi di chuột",
+        "desc": "Mức độ phóng to khi di chuột qua các biểu tượng dock"
+      },
+      "cascade_scale": {
+        "title": "Phóng to các mục lân cận",
+        "desc": "Phóng to phân tầng cho các biểu tượng liền kề"
       }
     }
   },

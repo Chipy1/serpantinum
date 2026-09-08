@@ -622,6 +622,14 @@
       "visible_elements": {
         "title": "Sichtbare Elemente",
         "desc": "Anzahl der gleichzeitig sichtbaren Dock-Elemente"
+      },
+      "hover_scale": {
+        "title": "Hover-Skalierungseffekt",
+        "desc": "Vergrößerungsstufe beim Bewegen der Maus über Dock-Elemente"
+      },
+      "cascade_scale": {
+        "title": "Benachbarte Elemente skalieren",
+        "desc": "Kaskadierende Vergrößerung benachbarter Symbole"
       }
     }
   },

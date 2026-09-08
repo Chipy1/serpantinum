@@ -31,7 +31,9 @@ Item {
         "apps": [],
         "overrideBoundsCorrection": false,
         "enableScrolling": false,
-        "visibleElements": 7
+        "visibleElements": 7,
+        "hoverScale": 120,
+        "cascadeScale": false
     })
 
     property var dockSettings: {
@@ -53,6 +55,8 @@ Item {
     }
     property int currentElementSize: (dockSettings && dockSettings.elementSize !== undefined && !isNaN(parseInt(dockSettings.elementSize))) ? parseInt(dockSettings.elementSize) : 44
     property bool currentOverrideBoundsCorrection: dockSettings && dockSettings.overrideBoundsCorrection !== undefined ? dockSettings.overrideBoundsCorrection : false
+    property int currentHoverScale: (dockSettings && dockSettings.hoverScale !== undefined && !isNaN(parseInt(dockSettings.hoverScale))) ? parseInt(dockSettings.hoverScale) : 120
+    property bool currentCascadeScale: dockSettings && dockSettings.cascadeScale !== undefined ? Boolean(dockSettings.cascadeScale) : false
     property bool currentEnableScrolling: dockSettings && dockSettings.enableScrolling !== undefined ? dockSettings.enableScrolling : false
     property int currentVisibleElements: (dockSettings && dockSettings.visibleElements !== undefined && !isNaN(parseInt(dockSettings.visibleElements)) && parseInt(dockSettings.visibleElements) > 0) ? parseInt(dockSettings.visibleElements) : 7
     property bool currentAutohide: dockSettings && dockSettings.autohide !== undefined ? dockSettings.autohide : false
@@ -71,6 +75,8 @@ Item {
         dockTabRoot.currentOpacity = s.opacity !== undefined ? Number(s.opacity) : (s.transparency !== undefined ? Math.max(0, 100 - Number(s.transparency)) : 100);
         dockTabRoot.currentElementSize = (s.elementSize !== undefined && !isNaN(parseInt(s.elementSize))) ? parseInt(s.elementSize) : 44;
         dockTabRoot.currentOverrideBoundsCorrection = s.overrideBoundsCorrection !== undefined ? s.overrideBoundsCorrection : false;
+        dockTabRoot.currentHoverScale = (s.hoverScale !== undefined && !isNaN(parseInt(s.hoverScale))) ? parseInt(s.hoverScale) : 120;
+        dockTabRoot.currentCascadeScale = s.cascadeScale !== undefined ? Boolean(s.cascadeScale) : false;
         dockTabRoot.currentEnableScrolling = s.enableScrolling !== undefined ? s.enableScrolling : false;
         dockTabRoot.currentVisibleElements = (s.visibleElements !== undefined && !isNaN(parseInt(s.visibleElements)) && parseInt(s.visibleElements) > 0) ? parseInt(s.visibleElements) : 7;
         dockTabRoot.currentAutohide = s.autohide !== undefined ? s.autohide : false;
@@ -612,6 +618,158 @@ Item {
                             onToggled: function(val) {
                                 dockTabRoot.currentOverrideBoundsCorrection = val;
                                 dockTabRoot.updateDockSetting("overrideBoundsCorrection", val);
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: scaleCol.implicitHeight + rootObj.s(24)
+                radius: ThemeBackend.borderRadius
+                color: Qt.alpha(ThemeBackend.surface0, 0.4)
+                border.width: 0
+                visible: dockTabRoot.currentEnabled
+
+                ColumnLayout {
+                    id: scaleCol
+                    anchors.left: parent.left
+                    anchors.leftMargin: rootObj.s(14)
+                    anchors.right: parent.right
+                    anchors.rightMargin: rootObj.s(14)
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: rootObj.s(12)
+
+                    RowLayout {
+                        id: rowHoverScaleLayout
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: scaleCol.width
+                        spacing: rootObj.s(12)
+
+                        IconButton {
+                            enabled: false
+                            size: rootObj.s(32)
+                            Layout.preferredWidth: rootObj.s(32)
+                            Layout.preferredHeight: rootObj.s(32)
+                            Layout.alignment: Qt.AlignVCenter
+                            cornerRadius: ThemeBackend.borderRadius
+                            buttonIcon: "󰍔"
+                            iconFontSize: rootObj.s(16)
+                            accentColor: ThemeBackend.surface0
+                            textColor: "#ffffff"
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
+                            spacing: rootObj.s(2)
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: I18n.t("guide.dock.hover_scale.title", "Hover scale effect")
+                                font.family: ThemeBackend.fontFamily
+                                font.pixelSize: rootObj.s(13)
+                                color: ThemeBackend.text
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: I18n.t("guide.dock.hover_scale.desc", "Magnification level when hovering over dock items")
+                                font.family: ThemeBackend.fontFamily
+                                font.pixelSize: rootObj.s(11)
+                                color: ThemeBackend.subtext0
+                            }
+                        }
+
+                        Draggable {
+                            id: hoverScaleSlider
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            implicitWidth: rootObj.s(220)
+                            implicitHeight: rootObj.s(18)
+                            from: 100
+                            to: 160
+                            stepSize: 2
+                            defaultValue: 120
+                            showValueBubble: true
+                            valueFormatter: function(v) { return Math.round(v) + "%" }
+                            value: dockTabRoot.currentHoverScale
+                            backgroundColor: ThemeBackend.surface0
+                            accentColor: ThemeBackend.mauve
+                            handleColor: ThemeBackend.text
+                            handleBorderColor: ThemeBackend.mantle
+                            onMoved: function(val) {
+                                let rounded = Math.round(val);
+                                if (dockTabRoot.currentHoverScale !== rounded) {
+                                    dockTabRoot.currentHoverScale = rounded;
+                                    dockTabRoot.triggerDebounced(function() {
+                                        dockTabRoot.updateDockSetting("hoverScale", rounded);
+                                    });
+                                }
+                            }
+                            onDragFinished: {
+                                dockDebounceTimer.stop();
+                                dockTabRoot.updateDockSetting("hoverScale", Math.round(hoverScaleSlider.value));
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: scaleCol.width
+                        height: 1
+                        color: Qt.alpha(ThemeBackend.surface1, 0.3)
+                    }
+
+                    RowLayout {
+                        id: rowCascadeScaleLayout
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: scaleCol.width
+                        spacing: rootObj.s(12)
+
+                        IconButton {
+                            enabled: false
+                            size: rootObj.s(32)
+                            Layout.preferredWidth: rootObj.s(32)
+                            Layout.preferredHeight: rootObj.s(32)
+                            Layout.alignment: Qt.AlignVCenter
+                            cornerRadius: ThemeBackend.borderRadius
+                            buttonIcon: "󰘚"
+                            iconFontSize: rootObj.s(16)
+                            accentColor: ThemeBackend.surface0
+                            textColor: "#ffffff"
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
+                            spacing: rootObj.s(2)
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: I18n.t("guide.dock.cascade_scale.title", "Scale nearest elements")
+                                font.family: ThemeBackend.fontFamily
+                                font.pixelSize: rootObj.s(13)
+                                color: ThemeBackend.text
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: I18n.t("guide.dock.cascade_scale.desc", "Cascading magnification on neighboring icons")
+                                font.family: ThemeBackend.fontFamily
+                                font.pixelSize: rootObj.s(11)
+                                color: ThemeBackend.subtext0
+                            }
+                        }
+
+                        Toggle {
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            checked: dockTabRoot.currentCascadeScale
+                            accentColor: ThemeBackend.mauve
+                            baseColor: ThemeBackend.surface1
+                            handleColor: ThemeBackend.crust
+                            handleOffColor: ThemeBackend.text
+                            onToggled: function(val) {
+                                dockTabRoot.currentCascadeScale = val;
+                                dockTabRoot.updateDockSetting("cascadeScale", val);
                             }
                         }
                     }

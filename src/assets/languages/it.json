@@ -577,6 +577,14 @@
       "visible_elements": {
         "title": "Elementi visibili",
         "desc": "Numero di elementi della dock visibili contemporaneamente"
+      },
+      "hover_scale": {
+        "title": "Effetto ingrandimento al passaggio",
+        "desc": "Livello di ingrandimento al passaggio del cursore sulle icone del dock"
+      },
+      "cascade_scale": {
+        "title": "Scala elementi vicini",
+        "desc": "Ingrandimento a cascata sulle icone adiacenti"
       }
     }
   },
