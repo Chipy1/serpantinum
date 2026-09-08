@@ -1,3 +1,15 @@
+### 2.1.4
+
+- style: add icons to each setting in the guidepopup, change margins, rework the wellbeing tab
+- increase the padding for grouped elements in the bar
+- feat: add new notification sounds
+- fix: dock having an element cut off on position change and disconnect the dock when the bar is in modular mode
+- fix: launcher having a bad corner at the bottom
+- fix: dock evaluation warning
+- fix: Dock taking up mouse area clicking when in hidden mode
+- fix a local function call bug in serpantinumd
+- fix: make all dock settings hide when dock is disabled
+
 ### 2.1.3
 
 - feat: add a dock functionality: dock.qml, dock settings
