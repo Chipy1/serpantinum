@@ -504,7 +504,7 @@ Variants {
                     item: dockWindow.editMode ? dismissArea : null
                 }
                 Region {
-                    item: dockMaskArea
+                    item: (dockWindow.isRevealed || dockContainer.revealProgress > 0.01) ? dockMaskArea : null
                 }
                 Region {
                     item: edgeTrigger
@@ -571,8 +571,8 @@ Variants {
 
             Item {
                 id: dockMaskArea
-                x: dockContainer.x - (dockContainer.isAttached && !dockWindow.isVertical ? dockWindow.outerCornerRadius : 0)
-                y: dockContainer.y - (dockContainer.isAttached && dockWindow.isVertical ? dockWindow.outerCornerRadius : 0)
+                x: dockContainer.x - (dockContainer.isAttached && !dockWindow.isVertical ? dockWindow.outerCornerRadius : 0) + dockContainer.transform[0].x
+                y: dockContainer.y - (dockContainer.isAttached && dockWindow.isVertical ? dockWindow.outerCornerRadius : 0) + dockContainer.transform[0].y
                 width: dockContainer.width + (dockContainer.isAttached && !dockWindow.isVertical ? dockWindow.outerCornerRadius * 2 : 0)
                 height: dockContainer.height + (dockContainer.isAttached && dockWindow.isVertical ? dockWindow.outerCornerRadius * 2 : 0)
             }
