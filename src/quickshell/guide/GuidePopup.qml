@@ -367,12 +367,10 @@ Item {
                 
                 topLeftRadius: ThemeBackend.clampedBorderRadius
                 bottomLeftRadius: ThemeBackend.clampedBorderRadius
-                topRightRadius: 8
-                bottomRightRadius: 8
+                topRightRadius: 0
+                bottomRightRadius: 0
                 
                 color: Qt.alpha(ThemeBackend.surface0, 0.4)
-                border.color: ThemeBackend.surface1
-                border.width: 1
                 opacity: introSidebar
                 transform: Translate { x: root.s(-30) * (1.0 - introSidebar) }
 
@@ -696,7 +694,10 @@ Item {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
-                anchors.margins: root.s(10)
+                anchors.leftMargin: 1
+                anchors.rightMargin: 1
+                anchors.topMargin: 4
+                anchors.bottomMargin: 4
 
                 opacity: introContent
                 scale: 0.95 + (0.05 * introContent)

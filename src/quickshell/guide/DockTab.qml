@@ -19,8 +19,6 @@ Item {
     transform: Translate { y: slideY }
     Behavior on opacity { NumberAnimation { duration: 250 } }
 
-    property real cardRadius: ThemeBackend.borderRadius <= 16 ? ThemeBackend.borderRadius * 2 : Math.min(32, 32 - 16 * Math.exp(-(ThemeBackend.borderRadius - 16) / 12))
-
     property var defaultDockSettings: ({
         "enabled": true,
         "position": "bottom",
@@ -178,18 +176,35 @@ Item {
                     anchors.right: parent.right
                     anchors.rightMargin: rootObj.s(14)
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: rootObj.s(16)
+                    spacing: rootObj.s(12)
+
+                    IconButton {
+                        enabled: false
+                        size: rootObj.s(32)
+                        Layout.preferredWidth: rootObj.s(32)
+                        Layout.preferredHeight: rootObj.s(32)
+                        Layout.alignment: Qt.AlignVCenter
+                        cornerRadius: ThemeBackend.borderRadius
+                        buttonIcon: "󰅀"
+                        iconFontSize: rootObj.s(16)
+                        accentColor: ThemeBackend.surface0
+                        textColor: "#ffffff"
+                    }
 
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
                         spacing: rootObj.s(2)
+
                         Text {
+                            Layout.fillWidth: true
                             text: I18n.t("guide.dock.enabled.title", "Enable dock")
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: rootObj.s(13)
                             color: ThemeBackend.text
                         }
                         Text {
+                            Layout.fillWidth: true
                             text: I18n.t("guide.dock.enabled.desc", "Enable floating application dock")
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: rootObj.s(11)
@@ -227,18 +242,36 @@ Item {
                     anchors.right: parent.right
                     anchors.rightMargin: rootObj.s(14)
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: rootObj.s(16)
+                    spacing: rootObj.s(12)
+
+                    IconButton {
+                        enabled: false
+                        size: rootObj.s(32)
+                        Layout.preferredWidth: rootObj.s(32)
+                        Layout.preferredHeight: rootObj.s(32)
+                        Layout.alignment: Qt.AlignVCenter
+                        cornerRadius: ThemeBackend.borderRadius
+                        buttonIcon: "󰍹"
+                        iconOffsetX: -2
+                        iconFontSize: rootObj.s(16)
+                        accentColor: ThemeBackend.surface0
+                        textColor: "#ffffff"
+                    }
 
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
                         spacing: rootObj.s(2)
+
                         Text {
+                            Layout.fillWidth: true
                             text: I18n.t("guide.dock.position.title", "Dock position")
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: rootObj.s(13)
                             color: ThemeBackend.text
                         }
                         Text {
+                            Layout.fillWidth: true
                             text: I18n.t("guide.dock.position.desc", "Select the screen edge to anchor the dock")
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: rootObj.s(11)
@@ -298,18 +331,35 @@ Item {
                     anchors.right: parent.right
                     anchors.rightMargin: rootObj.s(14)
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: rootObj.s(16)
+                    spacing: rootObj.s(12)
+
+                    IconButton {
+                        enabled: false
+                        size: rootObj.s(32)
+                        Layout.preferredWidth: rootObj.s(32)
+                        Layout.preferredHeight: rootObj.s(32)
+                        Layout.alignment: Qt.AlignVCenter
+                        cornerRadius: ThemeBackend.borderRadius
+                        buttonIcon: "󰉈"
+                        iconFontSize: rootObj.s(16)
+                        accentColor: ThemeBackend.surface0
+                        textColor: "#ffffff"
+                    }
 
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
                         spacing: rootObj.s(2)
+
                         Text {
+                            Layout.fillWidth: true
                             text: I18n.t("guide.dock.floating.title", "Floating dock")
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: rootObj.s(13)
                             color: ThemeBackend.text
                         }
                         Text {
+                            Layout.fillWidth: true
                             text: I18n.t("guide.dock.floating.desc", "Detach dock from screen edge with rounded corners")
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: rootObj.s(11)
@@ -347,18 +397,35 @@ Item {
                     anchors.right: parent.right
                     anchors.rightMargin: rootObj.s(14)
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: rootObj.s(16)
+                    spacing: rootObj.s(12)
+
+                    IconButton {
+                        enabled: false
+                        size: rootObj.s(32)
+                        Layout.preferredWidth: rootObj.s(32)
+                        Layout.preferredHeight: rootObj.s(32)
+                        Layout.alignment: Qt.AlignVCenter
+                        cornerRadius: ThemeBackend.borderRadius
+                        buttonIcon: "󰂵"
+                        iconFontSize: rootObj.s(16)
+                        accentColor: ThemeBackend.surface0
+                        textColor: "#ffffff"
+                    }
 
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
                         spacing: rootObj.s(2)
+
                         Text {
+                            Layout.fillWidth: true
                             text: I18n.t("guide.dock.opacity.title", "Dock opacity")
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: rootObj.s(13)
                             color: ThemeBackend.text
                         }
                         Text {
+                            Layout.fillWidth: true
                             text: I18n.t("guide.dock.opacity.desc", "Adjust dock background opacity level")
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: rootObj.s(11)
@@ -420,18 +487,35 @@ Item {
                         id: rowSizeLayout
                         Layout.fillWidth: true
                         Layout.preferredWidth: sizeCol.width
-                        spacing: rootObj.s(16)
+                        spacing: rootObj.s(12)
+
+                        IconButton {
+                            enabled: false
+                            size: rootObj.s(32)
+                            Layout.preferredWidth: rootObj.s(32)
+                            Layout.preferredHeight: rootObj.s(32)
+                            Layout.alignment: Qt.AlignVCenter
+                            cornerRadius: ThemeBackend.borderRadius
+                            buttonIcon: "󰘖"
+                            iconFontSize: rootObj.s(16)
+                            accentColor: ThemeBackend.surface0
+                            textColor: "#ffffff"
+                        }
 
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
                             spacing: rootObj.s(2)
+
                             Text {
+                                Layout.fillWidth: true
                                 text: I18n.t("guide.dock.size.title", "Element size")
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(13)
                                 color: ThemeBackend.text
                             }
                             Text {
+                                Layout.fillWidth: true
                                 text: I18n.t("guide.dock.size.desc", "Dimensions of individual app buttons in pixels")
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(11)
@@ -482,18 +566,35 @@ Item {
                         id: rowOverrideBoundsLayout
                         Layout.fillWidth: true
                         Layout.preferredWidth: sizeCol.width
-                        spacing: rootObj.s(16)
+                        spacing: rootObj.s(12)
+
+                        IconButton {
+                            enabled: false
+                            size: rootObj.s(32)
+                            Layout.preferredWidth: rootObj.s(32)
+                            Layout.preferredHeight: rootObj.s(32)
+                            Layout.alignment: Qt.AlignVCenter
+                            cornerRadius: ThemeBackend.borderRadius
+                            buttonIcon: "󰜤"
+                            iconFontSize: rootObj.s(16)
+                            accentColor: ThemeBackend.surface0
+                            textColor: "#ffffff"
+                        }
 
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
                             spacing: rootObj.s(2)
+
                             Text {
+                                Layout.fillWidth: true
                                 text: I18n.t("guide.dock.override_bounds.title", "Override out-of-screen-bounds size correction")
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(13)
                                 color: ThemeBackend.text
                             }
                             Text {
+                                Layout.fillWidth: true
                                 text: I18n.t("guide.dock.override_bounds.desc", "Keep custom element size even if dock exceeds screen limits")
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(11)
@@ -538,18 +639,35 @@ Item {
                         id: rowScrollingLayout
                         Layout.fillWidth: true
                         Layout.preferredWidth: scrollingCol.width
-                        spacing: rootObj.s(16)
+                        spacing: rootObj.s(12)
+
+                        IconButton {
+                            enabled: false
+                            size: rootObj.s(32)
+                            Layout.preferredWidth: rootObj.s(32)
+                            Layout.preferredHeight: rootObj.s(32)
+                            Layout.alignment: Qt.AlignVCenter
+                            cornerRadius: ThemeBackend.borderRadius
+                            buttonIcon: "󰍽"
+                            iconFontSize: rootObj.s(16)
+                            accentColor: ThemeBackend.surface0
+                            textColor: "#ffffff"
+                        }
 
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
                             spacing: rootObj.s(2)
+
                             Text {
+                                Layout.fillWidth: true
                                 text: I18n.t("guide.dock.scrolling.title", "Enable element scrolling")
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(13)
                                 color: ThemeBackend.text
                             }
                             Text {
+                                Layout.fillWidth: true
                                 text: I18n.t("guide.dock.scrolling.desc", "Limit visible elements and allow mouse wheel or touchpad scrolling")
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(11)
@@ -601,18 +719,35 @@ Item {
                                 id: rowVisibleElementsLayout
                                 Layout.fillWidth: true
                                 Layout.preferredWidth: visibleElementsInnerCol.width
-                                spacing: rootObj.s(16)
+                                spacing: rootObj.s(12)
+
+                                IconButton {
+                                    enabled: false
+                                    size: rootObj.s(32)
+                                    Layout.preferredWidth: rootObj.s(32)
+                                    Layout.preferredHeight: rootObj.s(32)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    cornerRadius: ThemeBackend.borderRadius
+                                    buttonIcon: "󰅫"
+                                    iconFontSize: rootObj.s(16)
+                                    accentColor: ThemeBackend.surface0
+                                    textColor: "#ffffff"
+                                }
 
                                 ColumnLayout {
                                     Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
                                     spacing: rootObj.s(2)
+
                                     Text {
+                                        Layout.fillWidth: true
                                         text: I18n.t("guide.dock.visible_elements.title", "Visible elements")
                                         font.family: ThemeBackend.fontFamily
                                         font.pixelSize: rootObj.s(13)
                                         color: ThemeBackend.text
                                     }
                                     Text {
+                                        Layout.fillWidth: true
                                         text: I18n.t("guide.dock.visible_elements.desc", "Number of dock items visible at the same time")
                                         font.family: ThemeBackend.fontFamily
                                         font.pixelSize: rootObj.s(11)
@@ -676,18 +811,35 @@ Item {
                         id: rowAutohideLayout
                         Layout.fillWidth: true
                         Layout.preferredWidth: autohideCol.width
-                        spacing: rootObj.s(16)
+                        spacing: rootObj.s(12)
+
+                        IconButton {
+                            enabled: false
+                            size: rootObj.s(32)
+                            Layout.preferredWidth: rootObj.s(32)
+                            Layout.preferredHeight: rootObj.s(32)
+                            Layout.alignment: Qt.AlignVCenter
+                            cornerRadius: ThemeBackend.borderRadius
+                            buttonIcon: "󰘓"
+                            iconFontSize: rootObj.s(16)
+                            accentColor: ThemeBackend.surface0
+                            textColor: "#ffffff"
+                        }
 
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
                             spacing: rootObj.s(2)
+
                             Text {
+                                Layout.fillWidth: true
                                 text: I18n.t("guide.dock.autohide.title", "Auto-hide")
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(13)
                                 color: ThemeBackend.text
                             }
                             Text {
+                                Layout.fillWidth: true
                                 text: I18n.t("guide.dock.autohide.desc", "Hide the dock when not hovering over the screen edge")
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(11)
@@ -739,18 +891,35 @@ Item {
                                 id: rowTimeoutLayout
                                 Layout.fillWidth: true
                                 Layout.preferredWidth: timeoutInnerCol.width
-                                spacing: rootObj.s(16)
+                                spacing: rootObj.s(12)
+
+                                IconButton {
+                                    enabled: false
+                                    size: rootObj.s(32)
+                                    Layout.preferredWidth: rootObj.s(32)
+                                    Layout.preferredHeight: rootObj.s(32)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    cornerRadius: ThemeBackend.borderRadius
+                                    buttonIcon: "󰔛"
+                                    iconFontSize: rootObj.s(16)
+                                    accentColor: ThemeBackend.surface0
+                                    textColor: "#ffffff"
+                                }
 
                                 ColumnLayout {
                                     Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
                                     spacing: rootObj.s(2)
+
                                     Text {
+                                        Layout.fillWidth: true
                                         text: I18n.t("guide.dock.timeout.title", "Auto-hide delay")
                                         font.family: ThemeBackend.fontFamily
                                         font.pixelSize: rootObj.s(13)
                                         color: ThemeBackend.text
                                     }
                                     Text {
+                                        Layout.fillWidth: true
                                         text: I18n.t("guide.dock.timeout.desc", "Duration before hiding after pointer leaves")
                                         font.family: ThemeBackend.fontFamily
                                         font.pixelSize: rootObj.s(11)
@@ -798,7 +967,7 @@ Item {
                 id: dockAppsCard
                 Layout.fillWidth: true
                 clip: true
-                radius: dockTabRoot.cardRadius
+                radius: ThemeBackend.borderRadius
                 color: Qt.alpha(ThemeBackend.surface0, 0.4)
                 border.color: Qt.alpha(ThemeBackend.surface1, 0.4)
                 border.width: 1
@@ -853,12 +1022,6 @@ Item {
                                 Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/qs_manager.sh", "close"]);
                             }
                         }
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 1
-                        color: Qt.alpha(ThemeBackend.surface1, 0.3)
                     }
 
                     GridLayout {

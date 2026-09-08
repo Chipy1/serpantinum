@@ -320,6 +320,14 @@ Item {
             property string actTitle: idleTabRoot.getActionTitle(actData, actId)
             property bool isPipelineValid: idleTabRoot.isActionPipelineValid(actData)
 
+            readonly property string actIcon: {
+                if (actId === "dim") return "󰃛";
+                if (actId === "lock") return "󰌾";
+                if (actId === "dpms") return "󰍹";
+                if (actId === "suspend") return "󰒲";
+                return "󰆍";
+            }
+
             Timer {
                 id: cardDebounceTimer
                 interval: 200
@@ -349,11 +357,23 @@ Item {
                 RowLayout {
                     id: cardInnerRow
                     Layout.fillWidth: true
-                    spacing: rootObj.s(8)
+                    spacing: rootObj.s(12)
+
+                    IconButton {
+                        enabled: false
+                        size: rootObj.s(32)
+                        Layout.preferredWidth: rootObj.s(32)
+                        Layout.preferredHeight: rootObj.s(32)
+                        Layout.alignment: Qt.AlignVCenter
+                        cornerRadius: ThemeBackend.borderRadius
+                        buttonIcon: actionCard.actIcon
+                        iconFontSize: rootObj.s(16)
+                        accentColor: ThemeBackend.surface0
+                        textColor: "#ffffff"
+                    }
 
                     RowLayout {
                         visible: !actionCard.isCustomAct
-                        Layout.preferredWidth: rootObj.s(160)
                         Layout.alignment: Qt.AlignVCenter
                         spacing: rootObj.s(6)
 
@@ -426,77 +446,81 @@ Item {
                     }
 
                     Item {
-                        visible: !actionCard.isCustomAct
                         Layout.fillWidth: true
                     }
 
-                    NumberSelector {
-                        Layout.alignment: Qt.AlignVCenter
-                        implicitWidth: rootObj.s(115)
-                        implicitHeight: rootObj.s(32)
-                        from: 10
-                        to: 7200
-                        stepSize: 10
-                        decimals: 0
-                        suffix: "s"
-                        value: actionCard.actTimeout
-                        baseColor: ThemeBackend.surface0
-                        accentColor: ThemeBackend.mauve
-                        buttonColor: ThemeBackend.surface1
-                        buttonTextColor: ThemeBackend.text
-                        textColor: ThemeBackend.text
-                        borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
-                        cornerRadius: ThemeBackend.borderRadius
-                        fontFamily: ThemeBackend.fontFamily
-                        fontPixelSize: rootObj.s(11)
-                        onValueChanged: function(val) {
-                            let num = (typeof val === "number" && !isNaN(val)) ? val : value;
-                            let rounded = Math.round(num);
-                            if (!isNaN(rounded) && rounded >= 10 && rounded <= 7200 && actionCard.actTimeout !== rounded) {
-                                let targetId = actionCard.actId;
-                                let isCustom = actionCard.isCustomAct;
-                                actionCard.debounceAction(function() {
-                                    idleTabRoot.updateActionProp(targetId, isCustom, "timeout", rounded);
-                                });
+                    RowLayout {
+                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                        spacing: rootObj.s(8)
+
+                        NumberSelector {
+                            Layout.alignment: Qt.AlignVCenter
+                            implicitWidth: rootObj.s(115)
+                            implicitHeight: rootObj.s(32)
+                            from: 10
+                            to: 7200
+                            stepSize: 10
+                            decimals: 0
+                            suffix: "s"
+                            value: actionCard.actTimeout
+                            baseColor: ThemeBackend.surface0
+                            accentColor: ThemeBackend.mauve
+                            buttonColor: ThemeBackend.surface1
+                            buttonTextColor: ThemeBackend.text
+                            textColor: ThemeBackend.text
+                            borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
+                            cornerRadius: ThemeBackend.borderRadius
+                            fontFamily: ThemeBackend.fontFamily
+                            fontPixelSize: rootObj.s(11)
+                            onValueChanged: function(val) {
+                                let num = (typeof val === "number" && !isNaN(val)) ? val : value;
+                                let rounded = Math.round(num);
+                                if (!isNaN(rounded) && rounded >= 10 && rounded <= 7200 && actionCard.actTimeout !== rounded) {
+                                    let targetId = actionCard.actId;
+                                    let isCustom = actionCard.isCustomAct;
+                                    actionCard.debounceAction(function() {
+                                        idleTabRoot.updateActionProp(targetId, isCustom, "timeout", rounded);
+                                    });
+                                }
                             }
                         }
-                    }
 
-                    IconButton {
-                        Layout.alignment: Qt.AlignVCenter
-                        implicitWidth: rootObj.s(28)
-                        implicitHeight: rootObj.s(28)
-                        cornerRadius: rootObj.s(8)
-                        iconOffsetX: -1
-                        buttonIcon: "󰒓"
-                        iconFontSize: rootObj.s(14)
-                        accentColor: actionCard.isExpanded ? Qt.alpha(ThemeBackend.mauve, 0.25) : ThemeBackend.surface0
-                        textColor: actionCard.isExpanded ? ThemeBackend.mauve : (isHoveredOrHighlighted ? ThemeBackend.text : ThemeBackend.overlay2)
-                        onClicked: {
-                            idleTabRoot.toggleActionExpanded(actionCard.actId);
+                        IconButton {
+                            Layout.alignment: Qt.AlignVCenter
+                            implicitWidth: rootObj.s(28)
+                            implicitHeight: rootObj.s(28)
+                            cornerRadius: rootObj.s(8)
+                            iconOffsetX: -1
+                            buttonIcon: "󰒓"
+                            iconFontSize: rootObj.s(14)
+                            accentColor: actionCard.isExpanded ? Qt.alpha(ThemeBackend.mauve, 0.25) : ThemeBackend.surface0
+                            textColor: actionCard.isExpanded ? ThemeBackend.mauve : (isHoveredOrHighlighted ? ThemeBackend.text : ThemeBackend.overlay2)
+                            onClicked: {
+                                idleTabRoot.toggleActionExpanded(actionCard.actId);
+                            }
                         }
-                    }
 
-                    Toggle {
-                        Layout.alignment: Qt.AlignVCenter
-                        checked: actionCard.actEnabled
-                        accentColor: ThemeBackend.mauve
-                        baseColor: ThemeBackend.surface1
-                        handleColor: ThemeBackend.crust
-                        handleOffColor: ThemeBackend.text
-                        onToggled: function(c) {
-                            idleTabRoot.updateActionProp(actionCard.actId, actionCard.isCustomAct, "enabled", c);
+                        Toggle {
+                            Layout.alignment: Qt.AlignVCenter
+                            checked: actionCard.actEnabled
+                            accentColor: ThemeBackend.mauve
+                            baseColor: ThemeBackend.surface1
+                            handleColor: ThemeBackend.crust
+                            handleOffColor: ThemeBackend.text
+                            onToggled: function(c) {
+                                idleTabRoot.updateActionProp(actionCard.actId, actionCard.isCustomAct, "enabled", c);
+                            }
                         }
-                    }
 
-                    DeleteButton {
-                        visible: actionCard.isCustomAct
-                        Layout.alignment: Qt.AlignVCenter
-                        size: rootObj.s(28)
-                        cornerRadius: rootObj.s(8)
-                        iconFontSize: rootObj.s(14)
-                        onClicked: {
-                            idleTabRoot.deleteCustomAction(actionCard.actId);
+                        DeleteButton {
+                            visible: actionCard.isCustomAct
+                            Layout.alignment: Qt.AlignVCenter
+                            size: rootObj.s(28)
+                            cornerRadius: rootObj.s(8)
+                            iconFontSize: rootObj.s(14)
+                            onClicked: {
+                                idleTabRoot.deleteCustomAction(actionCard.actId);
+                            }
                         }
                     }
                 }
@@ -540,10 +564,23 @@ Item {
                                 anchors.right: parent.right
                                 anchors.rightMargin: rootObj.s(6)
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: rootObj.s(16)
+                                spacing: rootObj.s(12)
+
+                                IconButton {
+                                    enabled: false
+                                    size: rootObj.s(28)
+                                    Layout.preferredWidth: rootObj.s(28)
+                                    Layout.preferredHeight: rootObj.s(28)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    cornerRadius: ThemeBackend.borderRadius
+                                    buttonIcon: "󰌿"
+                                    iconFontSize: rootObj.s(14)
+                                    accentColor: ThemeBackend.surface0
+                                    textColor: "#ffffff"
+                                }
 
                                 ColumnLayout {
-                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
                                     spacing: rootObj.s(2)
 
                                     Text {
@@ -559,6 +596,10 @@ Item {
                                         font.pixelSize: rootObj.s(10)
                                         color: ThemeBackend.subtext0
                                     }
+                                }
+
+                                Item {
+                                    Layout.fillWidth: true
                                 }
 
                                 Toggle {
@@ -595,10 +636,23 @@ Item {
                                 anchors.right: parent.right
                                 anchors.rightMargin: rootObj.s(6)
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: rootObj.s(16)
+                                spacing: rootObj.s(12)
+
+                                IconButton {
+                                    enabled: false
+                                    size: rootObj.s(28)
+                                    Layout.preferredWidth: rootObj.s(28)
+                                    Layout.preferredHeight: rootObj.s(28)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    cornerRadius: ThemeBackend.borderRadius
+                                    buttonIcon: "󰝚"
+                                    iconFontSize: rootObj.s(14)
+                                    accentColor: ThemeBackend.surface0
+                                    textColor: "#ffffff"
+                                }
 
                                 ColumnLayout {
-                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
                                     spacing: rootObj.s(2)
 
                                     Text {
@@ -614,6 +668,10 @@ Item {
                                         font.pixelSize: rootObj.s(10)
                                         color: ThemeBackend.subtext0
                                     }
+                                }
+
+                                Item {
+                                    Layout.fillWidth: true
                                 }
 
                                 Toggle {
@@ -652,8 +710,21 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: rootObj.s(12)
 
+                                IconButton {
+                                    enabled: false
+                                    size: rootObj.s(28)
+                                    Layout.preferredWidth: rootObj.s(28)
+                                    Layout.preferredHeight: rootObj.s(28)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    cornerRadius: ThemeBackend.borderRadius
+                                    buttonIcon: "󰀪"
+                                    iconFontSize: rootObj.s(14)
+                                    accentColor: ThemeBackend.surface0
+                                    textColor: "#ffffff"
+                                }
+
                                 ColumnLayout {
-                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
                                     spacing: rootObj.s(2)
 
                                     Text {
@@ -669,6 +740,10 @@ Item {
                                         font.pixelSize: rootObj.s(10)
                                         color: ThemeBackend.subtext0
                                     }
+                                }
+
+                                Item {
+                                    Layout.fillWidth: true
                                 }
 
                                 RowLayout {
@@ -751,10 +826,23 @@ Item {
                                 anchors.right: parent.right
                                 anchors.rightMargin: rootObj.s(6)
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: rootObj.s(16)
+                                spacing: rootObj.s(12)
+
+                                IconButton {
+                                    enabled: false
+                                    size: rootObj.s(28)
+                                    Layout.preferredWidth: rootObj.s(28)
+                                    Layout.preferredHeight: rootObj.s(28)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    cornerRadius: ThemeBackend.borderRadius
+                                    buttonIcon: "󰆍"
+                                    iconFontSize: rootObj.s(14)
+                                    accentColor: ThemeBackend.surface0
+                                    textColor: "#ffffff"
+                                }
 
                                 ColumnLayout {
-                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
                                     spacing: rootObj.s(2)
 
                                     Text {
@@ -770,6 +858,10 @@ Item {
                                         font.pixelSize: rootObj.s(10)
                                         color: ThemeBackend.subtext0
                                     }
+                                }
+
+                                Item {
+                                    Layout.fillWidth: true
                                 }
 
                                 Input {
@@ -815,10 +907,23 @@ Item {
                                 anchors.right: parent.right
                                 anchors.rightMargin: rootObj.s(6)
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: rootObj.s(16)
+                                spacing: rootObj.s(12)
+
+                                IconButton {
+                                    enabled: false
+                                    size: rootObj.s(28)
+                                    Layout.preferredWidth: rootObj.s(28)
+                                    Layout.preferredHeight: rootObj.s(28)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    cornerRadius: ThemeBackend.borderRadius
+                                    buttonIcon: "󰑐"
+                                    iconFontSize: rootObj.s(14)
+                                    accentColor: ThemeBackend.surface0
+                                    textColor: "#ffffff"
+                                }
 
                                 ColumnLayout {
-                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
                                     spacing: rootObj.s(2)
 
                                     Text {
@@ -834,6 +939,10 @@ Item {
                                         font.pixelSize: rootObj.s(10)
                                         color: ThemeBackend.subtext0
                                     }
+                                }
+
+                                Item {
+                                    Layout.fillWidth: true
                                 }
 
                                 Input {
@@ -891,19 +1000,39 @@ Item {
                     anchors.leftMargin: rootObj.s(14)
                     anchors.rightMargin: rootObj.s(14)
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: rootObj.s(16)
+                    spacing: rootObj.s(12)
+
+                    IconButton {
+                        enabled: false
+                        size: rootObj.s(32)
+                        Layout.preferredWidth: rootObj.s(32)
+                        Layout.preferredHeight: rootObj.s(32)
+                        Layout.alignment: Qt.AlignVCenter
+                        cornerRadius: ThemeBackend.borderRadius
+                        buttonIcon: "󰒲"
+                        iconFontSize: rootObj.s(16)
+                        accentColor: ThemeBackend.surface0
+                        textColor: "#ffffff"
+                    }
 
                     ColumnLayout {
-                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
                         spacing: rootObj.s(2)
                         Text { text: I18n.t("guide.idle.enabled.title", "Enable Idle System"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(13); color: ThemeBackend.text }
                         Text { text: I18n.t("guide.idle.enabled.desc", "Activate power management and lock timeouts"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(11); color: ThemeBackend.subtext0 }
                     }
 
+                    Item {
+                        Layout.fillWidth: true
+                    }
+
                     Toggle {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                         checked: idleTabRoot.idleEnabled
-                        accentColor: ThemeBackend.mauve; baseColor: ThemeBackend.surface1; handleColor: ThemeBackend.crust; handleOffColor: ThemeBackend.text
+                        accentColor: ThemeBackend.mauve
+                        baseColor: ThemeBackend.surface1
+                        handleColor: ThemeBackend.crust
+                        handleOffColor: ThemeBackend.text
                         onToggled: function(c) { idleTabRoot.updateRootSetting("enabled", c); }
                     }
                 }
@@ -924,19 +1053,39 @@ Item {
                     anchors.leftMargin: rootObj.s(14)
                     anchors.rightMargin: rootObj.s(14)
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: rootObj.s(16)
+                    spacing: rootObj.s(12)
+
+                    IconButton {
+                        enabled: false
+                        size: rootObj.s(32)
+                        Layout.preferredWidth: rootObj.s(32)
+                        Layout.preferredHeight: rootObj.s(32)
+                        Layout.alignment: Qt.AlignVCenter
+                        cornerRadius: ThemeBackend.borderRadius
+                        buttonIcon: "󰅶"
+                        iconFontSize: rootObj.s(16)
+                        accentColor: ThemeBackend.surface0
+                        textColor: "#ffffff"
+                    }
 
                     ColumnLayout {
-                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
                         spacing: rootObj.s(2)
                         Text { text: I18n.t("guide.idle.manual_inhibit.title", "Do Not Disturb (Keep Awake)"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(13); color: ThemeBackend.text }
                         Text { text: I18n.t("guide.idle.manual_inhibit.desc", "Manually prevent the system from idling"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(11); color: ThemeBackend.subtext0 }
                     }
 
+                    Item {
+                        Layout.fillWidth: true
+                    }
+
                     Toggle {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                         checked: idleTabRoot.manualInhibit
-                        accentColor: ThemeBackend.mauve; baseColor: ThemeBackend.surface1; handleColor: ThemeBackend.crust; handleOffColor: ThemeBackend.text
+                        accentColor: ThemeBackend.mauve
+                        baseColor: ThemeBackend.surface1
+                        handleColor: ThemeBackend.crust
+                        handleOffColor: ThemeBackend.text
                         onToggled: function(c) { idleTabRoot.updateRootSetting("manualInhibit", c); }
                     }
                 }
@@ -952,7 +1101,9 @@ Item {
 
                 ColumnLayout {
                     id: actionsBoxCol
-                    anchors.fill: parent
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
                     anchors.margins: rootObj.s(12)
                     spacing: rootObj.s(10)
 
@@ -960,8 +1111,21 @@ Item {
                         Layout.fillWidth: true
                         spacing: rootObj.s(12)
 
+                        IconButton {
+                            enabled: false
+                            size: rootObj.s(32)
+                            Layout.preferredWidth: rootObj.s(32)
+                            Layout.preferredHeight: rootObj.s(32)
+                            Layout.alignment: Qt.AlignVCenter
+                            cornerRadius: ThemeBackend.borderRadius
+                            buttonIcon: "󰔛"
+                            iconFontSize: rootObj.s(16)
+                            accentColor: ThemeBackend.surface0
+                            textColor: "#ffffff"
+                        }
+
                         ColumnLayout {
-                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
                             spacing: rootObj.s(2)
 
                             Text {
@@ -979,10 +1143,15 @@ Item {
                             }
                         }
 
+                        Item {
+                            Layout.fillWidth: true
+                        }
+
                         IconButton {
                             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                            implicitWidth: rootObj.s(32)
-                            implicitHeight: rootObj.s(32)
+                            size: rootObj.s(32)
+                            Layout.preferredWidth: rootObj.s(32)
+                            Layout.preferredHeight: rootObj.s(32)
                             cornerRadius: rootObj.s(8)
                             buttonIcon: "󰐕"
                             iconFontSize: rootObj.s(14)
