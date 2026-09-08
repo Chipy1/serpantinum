@@ -397,7 +397,7 @@ Item {
                             Text {
                                 id: invalidBadgeText
                                 anchors.centerIn: parent
-                                text: I18n.t("guide.idle.invalid_badge", "Order")
+                                text: I18n.t("guide.idle.order_violation", "Order")
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(10)
                                 font.bold: true
@@ -532,7 +532,7 @@ Item {
                     clip: true
                     visible: implicitHeight > 0
                     opacity: isOpen ? 1.0 : 0.0
-                    implicitHeight: isOpen ? expandedInnerCol.implicitHeight : 0
+                    implicitHeight: isOpen ? (expandedInnerCol.implicitHeight + rootObj.s(8)) : 0
 
                     Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
                     Behavior on implicitHeight { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
@@ -542,27 +542,22 @@ Item {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        spacing: 0
+                        anchors.topMargin: rootObj.s(8)
+                        spacing: rootObj.s(6)
 
                         Rectangle {
                             Layout.fillWidth: true
-                            height: 1
-                            color: Qt.alpha(ThemeBackend.surface1, 0.2)
-                            Layout.topMargin: rootObj.s(6)
-                            Layout.bottomMargin: rootObj.s(6)
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            implicitHeight: rowRespectInhibitorsLayout.implicitHeight + rootObj.s(14)
-                            color: "transparent"
+                            implicitHeight: rowRespectInhibitorsLayout.implicitHeight + rootObj.s(20)
+                            radius: ThemeBackend.borderRadius
+                            color: Qt.alpha(ThemeBackend.surface1, 0.35)
+                            border.width: 0
 
                             RowLayout {
                                 id: rowRespectInhibitorsLayout
                                 anchors.left: parent.left
-                                anchors.leftMargin: rootObj.s(6)
+                                anchors.leftMargin: rootObj.s(14)
                                 anchors.right: parent.right
-                                anchors.rightMargin: rootObj.s(6)
+                                anchors.rightMargin: rootObj.s(14)
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: rootObj.s(12)
 
@@ -618,23 +613,17 @@ Item {
 
                         Rectangle {
                             Layout.fillWidth: true
-                            height: 1
-                            color: Qt.alpha(ThemeBackend.surface1, 0.2)
-                            Layout.topMargin: rootObj.s(4)
-                            Layout.bottomMargin: rootObj.s(4)
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            implicitHeight: rowMprisInhibitLayout.implicitHeight + rootObj.s(14)
-                            color: "transparent"
+                            implicitHeight: rowMprisInhibitLayout.implicitHeight + rootObj.s(20)
+                            radius: ThemeBackend.borderRadius
+                            color: Qt.alpha(ThemeBackend.surface1, 0.35)
+                            border.width: 0
 
                             RowLayout {
                                 id: rowMprisInhibitLayout
                                 anchors.left: parent.left
-                                anchors.leftMargin: rootObj.s(6)
+                                anchors.leftMargin: rootObj.s(14)
                                 anchors.right: parent.right
-                                anchors.rightMargin: rootObj.s(6)
+                                anchors.rightMargin: rootObj.s(14)
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: rootObj.s(12)
 
@@ -690,23 +679,17 @@ Item {
 
                         Rectangle {
                             Layout.fillWidth: true
-                            height: 1
-                            color: Qt.alpha(ThemeBackend.surface1, 0.2)
-                            Layout.topMargin: rootObj.s(4)
-                            Layout.bottomMargin: rootObj.s(4)
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            implicitHeight: rowWarningCmdLayout.implicitHeight + rootObj.s(14)
-                            color: "transparent"
+                            implicitHeight: rowWarningCmdLayout.implicitHeight + rootObj.s(20)
+                            radius: ThemeBackend.borderRadius
+                            color: Qt.alpha(ThemeBackend.surface1, 0.35)
+                            border.width: 0
 
                             RowLayout {
                                 id: rowWarningCmdLayout
                                 anchors.left: parent.left
-                                anchors.leftMargin: rootObj.s(6)
+                                anchors.leftMargin: rootObj.s(14)
                                 anchors.right: parent.right
-                                anchors.rightMargin: rootObj.s(6)
+                                anchors.rightMargin: rootObj.s(14)
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: rootObj.s(12)
 
@@ -756,11 +739,11 @@ Item {
                                         implicitHeight: rootObj.s(30)
                                         text: actionCard.actWarningCmd
                                         placeholderText: I18n.t("guide.idle.warning_command.placeholder", "Warning command")
-                                        baseColor: ThemeBackend.surface0
+                                        baseColor: ThemeBackend.mantle
                                         accentColor: ThemeBackend.mauve
                                         textColor: ThemeBackend.text
                                         subTextColor: ThemeBackend.subtext0
-                                        borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
+                                        borderColor: Qt.alpha(ThemeBackend.surface1, 0.8)
                                         cornerRadius: ThemeBackend.borderRadius
                                         fontPixelSize: rootObj.s(11)
                                         onAccepted: function(t) {
@@ -807,24 +790,17 @@ Item {
                         Rectangle {
                             visible: actionCard.actId !== "suspend"
                             Layout.fillWidth: true
-                            height: 1
-                            color: Qt.alpha(ThemeBackend.surface1, 0.2)
-                            Layout.topMargin: rootObj.s(4)
-                            Layout.bottomMargin: rootObj.s(4)
-                        }
-
-                        Rectangle {
-                            visible: actionCard.actId !== "suspend"
-                            Layout.fillWidth: true
-                            implicitHeight: rowBeforeCmdLayout.implicitHeight + rootObj.s(14)
-                            color: "transparent"
+                            implicitHeight: rowBeforeCmdLayout.implicitHeight + rootObj.s(20)
+                            radius: ThemeBackend.borderRadius
+                            color: Qt.alpha(ThemeBackend.surface1, 0.35)
+                            border.width: 0
 
                             RowLayout {
                                 id: rowBeforeCmdLayout
                                 anchors.left: parent.left
-                                anchors.leftMargin: rootObj.s(6)
+                                anchors.leftMargin: rootObj.s(14)
                                 anchors.right: parent.right
-                                anchors.rightMargin: rootObj.s(6)
+                                anchors.rightMargin: rootObj.s(14)
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: rootObj.s(12)
 
@@ -870,11 +846,11 @@ Item {
                                     implicitHeight: rootObj.s(30)
                                     text: actionCard.actBeforeCmd
                                     placeholderText: I18n.t("guide.idle.before_command.placeholder", "Before action command")
-                                    baseColor: ThemeBackend.surface0
+                                    baseColor: ThemeBackend.mantle
                                     accentColor: ThemeBackend.mauve
                                     textColor: ThemeBackend.text
                                     subTextColor: ThemeBackend.subtext0
-                                    borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
+                                    borderColor: Qt.alpha(ThemeBackend.surface1, 0.8)
                                     cornerRadius: ThemeBackend.borderRadius
                                     fontPixelSize: rootObj.s(11)
                                     onAccepted: function(t) {
@@ -888,24 +864,17 @@ Item {
                         Rectangle {
                             visible: actionCard.actId !== "suspend"
                             Layout.fillWidth: true
-                            height: 1
-                            color: Qt.alpha(ThemeBackend.surface1, 0.2)
-                            Layout.topMargin: rootObj.s(4)
-                            Layout.bottomMargin: rootObj.s(4)
-                        }
-
-                        Rectangle {
-                            visible: actionCard.actId !== "suspend"
-                            Layout.fillWidth: true
-                            implicitHeight: rowResumeCmdLayout.implicitHeight + rootObj.s(14)
-                            color: "transparent"
+                            implicitHeight: rowResumeCmdLayout.implicitHeight + rootObj.s(20)
+                            radius: ThemeBackend.borderRadius
+                            color: Qt.alpha(ThemeBackend.surface1, 0.35)
+                            border.width: 0
 
                             RowLayout {
                                 id: rowResumeCmdLayout
                                 anchors.left: parent.left
-                                anchors.leftMargin: rootObj.s(6)
+                                anchors.leftMargin: rootObj.s(14)
                                 anchors.right: parent.right
-                                anchors.rightMargin: rootObj.s(6)
+                                anchors.rightMargin: rootObj.s(14)
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: rootObj.s(12)
 
@@ -951,11 +920,11 @@ Item {
                                     implicitHeight: rootObj.s(30)
                                     text: actionCard.actResumeCmd
                                     placeholderText: idleTabRoot.getDefaultResumeCommand(actionCard.actId)
-                                    baseColor: ThemeBackend.surface0
+                                    baseColor: ThemeBackend.mantle
                                     accentColor: ThemeBackend.mauve
                                     textColor: ThemeBackend.text
                                     subTextColor: ThemeBackend.subtext0
-                                    borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
+                                    borderColor: Qt.alpha(ThemeBackend.surface1, 0.8)
                                     cornerRadius: ThemeBackend.borderRadius
                                     fontPixelSize: rootObj.s(11)
                                     onAccepted: function(t) {
