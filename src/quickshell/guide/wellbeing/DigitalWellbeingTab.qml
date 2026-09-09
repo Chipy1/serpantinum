@@ -429,21 +429,6 @@ Item {
     Shortcut { sequence: "Home"; enabled: tabRoot.visible && !tabRoot.isSettingsView; onActivated: changeDay(-7) }
     Shortcut { sequence: "End"; enabled: tabRoot.visible && !tabRoot.isSettingsView; onActivated: changeDay(7) }
 
-    Shortcut {
-        sequence: "Escape"
-        enabled: tabRoot.visible && (tabRoot.selectedAppClass !== "" || tabRoot.isWeekView)
-        onActivated: {
-            if (tabRoot.selectedAppClass !== "") {
-                tabRoot.selectedAppClass = "";
-                tabRoot.selectedAppName = "";
-                tabRoot.selectedAppIcon = "";
-                tabRoot.requestDataUpdate();
-            } else if (tabRoot.isWeekView) {
-                tabRoot.isWeekView = false;
-            }
-        }
-    }
-
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: rootObj.s(12)
@@ -687,35 +672,13 @@ Item {
                         border.color: Qt.alpha(ThemeBackend.surface1, 0.4)
                         border.width: 1
 
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: rootObj.s(16)
-                            anchors.rightMargin: rootObj.s(16)
-                            spacing: rootObj.s(12)
-
-                            IconButton {
-                                enabled: false
-                                size: rootObj.s(36)
-                                Layout.preferredWidth: rootObj.s(36)
-                                Layout.preferredHeight: rootObj.s(36)
-                                Layout.alignment: Qt.AlignVCenter
-                                cornerRadius: ThemeBackend.borderRadius
-                                buttonIcon: "󰥔"
-                                iconFontSize: rootObj.s(19)
-                                accentColor: ThemeBackend.surface0
-                                textColor: ThemeBackend.mauve
-                            }
-
-                            Text {
-                                Layout.fillWidth: true
-                                Layout.alignment: Qt.AlignVCenter
-                                horizontalAlignment: Text.AlignHCenter
-                                font.family: ThemeBackend.fontFamily
-                                font.weight: Font.Black
-                                font.pixelSize: rootObj.s(30)
-                                color: ThemeBackend.text
-                                text: tabRoot.formatTimeLarge(tabRoot.animatedTotalSeconds)
-                            }
+                        Text {
+                            anchors.centerIn: parent
+                            font.family: ThemeBackend.fontFamily
+                            font.weight: Font.Black
+                            font.pixelSize: rootObj.s(30)
+                            color: ThemeBackend.text
+                            text: tabRoot.formatTimeLarge(tabRoot.animatedTotalSeconds)
                         }
                     }
 
@@ -1062,7 +1025,7 @@ Item {
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     Layout.alignment: Qt.AlignVCenter
-                                    spacing: rootObj.s(3)
+                                    spacing: -rootObj.s(1)
 
                                     Text {
                                         Layout.fillWidth: true
@@ -1081,17 +1044,13 @@ Item {
                                         Item {
                                             Layout.fillWidth: true
                                             Layout.alignment: Qt.AlignVCenter
-                                            height: rootObj.s(6)
-                                            Rectangle { anchors.fill: parent; radius: rootObj.s(3); color: ThemeBackend.surface1 }
+                                            height: rootObj.s(10)
+                                            Rectangle { anchors.fill: parent; radius: rootObj.s(5); color: ThemeBackend.surface1 }
                                             Rectangle {
                                                 height: parent.height
-                                                width: Math.max(rootObj.s(6), parent.width * (model.percent / 100.0) * tabRoot.introAppBars)
-                                                radius: rootObj.s(3)
-                                                gradient: Gradient {
-                                                    orientation: Gradient.Horizontal
-                                                    GradientStop { position: 0.0; color: ThemeBackend.mauve }
-                                                    GradientStop { position: 1.0; color: ThemeBackend.blue }
-                                                }
+                                                width: Math.max(rootObj.s(10), parent.width * (model.percent / 100.0) * tabRoot.introAppBars)
+                                                radius: rootObj.s(5)
+                                                color: ThemeBackend.mauve
                                                 Behavior on width {
                                                     enabled: tabRoot.introAppBars === 1.0
                                                     NumberAnimation { duration: 600; easing.type: Easing.OutQuint }
@@ -1102,10 +1061,10 @@ Item {
                                         ClickButton {
                                             enabled: false
                                             Layout.alignment: Qt.AlignVCenter
-                                            Layout.preferredHeight: rootObj.s(22)
+                                            Layout.preferredHeight: rootObj.s(25)
                                             horizontalPadding: rootObj.s(8)
                                             cornerRadius: Math.min(ThemeBackend.borderRadius, rootObj.s(6))
-                                            textFontSize: rootObj.s(11)
+                                            textFontSize: rootObj.s(13)
                                             accentColor: Qt.alpha(ThemeBackend.surface1, 0.7)
                                             textColor: ThemeBackend.subtext0
                                             buttonText: tabRoot.formatTimeList(model.seconds)
@@ -1237,24 +1196,24 @@ Item {
                         anchors.margins: rootObj.s(12)
                         spacing: rootObj.s(12)
 
-                        ColumnLayout {
+                        RowLayout {
                             Layout.fillWidth: true
-                            Layout.preferredWidth: 4
                             Layout.fillHeight: true
-                            spacing: rootObj.s(4)
+                            spacing: rootObj.s(8)
 
-                            Repeater {
-                                model: 7
-                                delegate: RowLayout {
-                                    property int dayIndex: index
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    spacing: rootObj.s(6)
+                            opacity: introMidLeft
+                            transform: Translate { x: rootObj.s(-20) * (1 - introMidLeft) }
 
-                                    opacity: introMidLeft
-                                    transform: Translate { x: rootObj.s(-20) * (1 - introMidLeft) + (dayIndex * rootObj.s(5) * (1 - introMidLeft)) }
+                            Column {
+                                Layout.preferredWidth: rootObj.s(65)
+                                Layout.fillHeight: true
+                                spacing: rootObj.s(3)
 
-                                    Text {
+                                Repeater {
+                                    model: 7
+                                    delegate: Text {
+                                        width: parent.width
+                                        height: (parent.height - rootObj.s(3) * 6) / 7
                                         text: [
                                             I18n.t("guide.wellbeing.days.monday"),
                                             I18n.t("guide.wellbeing.days.tuesday"),
@@ -1263,51 +1222,64 @@ Item {
                                             I18n.t("guide.wellbeing.days.friday"),
                                             I18n.t("guide.wellbeing.days.saturday"),
                                             I18n.t("guide.wellbeing.days.sunday")
-                                        ][dayIndex]
+                                        ][index]
                                         font.family: ThemeBackend.fontFamily
                                         font.weight: Font.Normal
                                         font.pixelSize: rootObj.s(11)
                                         color: ThemeBackend.subtext0
-                                        Layout.preferredWidth: rootObj.s(65)
                                         verticalAlignment: Text.AlignVCenter
                                     }
+                                }
+                            }
 
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-                                        radius: ThemeBackend.borderRadius
-                                        color: "transparent"
-                                        clip: true
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                radius: ThemeBackend.borderRadius
+                                color: "transparent"
+                                clip: true
 
-                                        RowLayout {
-                                            anchors.fill: parent
-                                            spacing: 0
+                                Column {
+                                    anchors.fill: parent
+                                    spacing: rootObj.s(3)
 
-                                            Repeater {
-                                                model: 24
-                                                delegate: Rectangle {
-                                                    Layout.fillWidth: true
-                                                    Layout.fillHeight: true
-                                                    radius: 0
+                                    Repeater {
+                                        model: 7
+                                        delegate: Item {
+                                            property int dayIndex: index
+                                            width: parent.width
+                                            height: (parent.height - rootObj.s(3) * 6) / 7
 
-                                                    property real val: (tabRoot.weekHeatmapData[dayIndex] && tabRoot.weekHeatmapData[dayIndex][index]) ? tabRoot.weekHeatmapData[dayIndex][index] : 0
-                                                    property real intensity: Math.min(1.0, 0.2 + 0.8 * (val / Math.max(tabRoot.maxWeekHour, 1)))
-                                                    color: val === 0 ? ThemeBackend.surface1 : Qt.rgba(ThemeBackend.mauve.r, ThemeBackend.mauve.g, ThemeBackend.mauve.b, intensity)
+                                            Row {
+                                                anchors.fill: parent
+                                                spacing: 0
 
-                                                    scale: tabRoot.isWeekView ? 1.0 : 0.5
-                                                    Behavior on scale {
-                                                        NumberAnimation {
-                                                            duration: 400 + (dayIndex * 30) + (index * 10)
-                                                            easing.type: Easing.OutBack
+                                                Repeater {
+                                                    model: 24
+                                                    delegate: Rectangle {
+                                                        width: parent.width / 24
+                                                        height: parent.height
+                                                        radius: 0
+
+                                                        property real val: (tabRoot.weekHeatmapData[dayIndex] && tabRoot.weekHeatmapData[dayIndex][index]) ? tabRoot.weekHeatmapData[dayIndex][index] : 0
+                                                        property real intensity: Math.min(1.0, 0.2 + 0.8 * (val / Math.max(tabRoot.maxWeekHour, 1)))
+                                                        color: val === 0 ? ThemeBackend.surface1 : Qt.rgba(ThemeBackend.mauve.r, ThemeBackend.mauve.g, ThemeBackend.mauve.b, intensity)
+
+                                                        scale: tabRoot.isWeekView ? 1.0 : 0.5
+                                                        Behavior on scale {
+                                                            NumberAnimation {
+                                                                duration: 400 + (dayIndex * 30) + (index * 10)
+                                                                easing.type: Easing.OutBack
+                                                            }
                                                         }
-                                                    }
-                                                    Behavior on color { ColorAnimation { duration: 600; easing.type: Easing.OutQuint } }
+                                                        Behavior on color { ColorAnimation { duration: 600; easing.type: Easing.OutQuint } }
 
-                                                    MouseArea {
-                                                        anchors.fill: parent
-                                                        hoverEnabled: true
-                                                        onEntered: parent.opacity = 0.7
-                                                        onExited: parent.opacity = 1.0
+                                                        MouseArea {
+                                                            anchors.fill: parent
+                                                            hoverEnabled: true
+                                                            onEntered: parent.opacity = 0.7
+                                                            onExited: parent.opacity = 1.0
+                                                        }
                                                     }
                                                 }
                                             }
@@ -1318,8 +1290,7 @@ Item {
                         }
 
                         ColumnLayout {
-                            Layout.fillWidth: true
-                            Layout.preferredWidth: 1
+                            Layout.preferredWidth: rootObj.s(170)
                             Layout.maximumWidth: rootObj.s(170)
                             Layout.fillHeight: true
                             spacing: rootObj.s(8)
@@ -1514,7 +1485,7 @@ Item {
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     Layout.alignment: Qt.AlignVCenter
-                                    spacing: rootObj.s(3)
+                                    spacing: -rootObj.s(1)
 
                                     Text {
                                         Layout.fillWidth: true
@@ -1533,17 +1504,13 @@ Item {
                                         Item {
                                             Layout.fillWidth: true
                                             Layout.alignment: Qt.AlignVCenter
-                                            height: rootObj.s(6)
-                                            Rectangle { anchors.fill: parent; radius: rootObj.s(3); color: ThemeBackend.surface1 }
+                                            height: rootObj.s(10)
+                                            Rectangle { anchors.fill: parent; radius: rootObj.s(5); color: ThemeBackend.surface1 }
                                             Rectangle {
                                                 height: parent.height
-                                                width: Math.max(rootObj.s(6), parent.width * (model.percent / 100.0) * tabRoot.introAppBars)
-                                                radius: rootObj.s(3)
-                                                gradient: Gradient {
-                                                    orientation: Gradient.Horizontal
-                                                    GradientStop { position: 0.0; color: ThemeBackend.mauve }
-                                                    GradientStop { position: 1.0; color: ThemeBackend.blue }
-                                                }
+                                                width: Math.max(rootObj.s(10), parent.width * (model.percent / 100.0) * tabRoot.introAppBars)
+                                                radius: rootObj.s(5)
+                                                color: ThemeBackend.mauve
                                                 Behavior on width {
                                                     enabled: tabRoot.introAppBars === 1.0
                                                     NumberAnimation { duration: 600; easing.type: Easing.OutQuint }
@@ -1554,10 +1521,10 @@ Item {
                                         ClickButton {
                                             enabled: false
                                             Layout.alignment: Qt.AlignVCenter
-                                            Layout.preferredHeight: rootObj.s(22)
+                                            Layout.preferredHeight: rootObj.s(25)
                                             horizontalPadding: rootObj.s(8)
                                             cornerRadius: Math.min(ThemeBackend.borderRadius, rootObj.s(6))
-                                            textFontSize: rootObj.s(11)
+                                            textFontSize: rootObj.s(13)
                                             accentColor: Qt.alpha(ThemeBackend.surface1, 0.7)
                                             textColor: ThemeBackend.subtext0
                                             buttonText: tabRoot.formatTimeList(model.seconds)
