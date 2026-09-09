@@ -25,6 +25,7 @@ Item {
         "elementSize": 44,
         "floating": false,
         "opacity": 100,
+        "exclusive": false,
         "autohide": false,
         "autohideTimeout": 1000,
         "editing": false,
@@ -48,6 +49,7 @@ Item {
     property bool currentEnabled: dockSettings && dockSettings.enabled !== undefined ? dockSettings.enabled : true
     property string currentPosition: dockSettings && dockSettings.position !== undefined ? dockSettings.position : "bottom"
     property bool currentFloating: dockSettings && dockSettings.floating !== undefined ? dockSettings.floating : false
+    property bool currentExclusive: dockSettings && (dockSettings.exclusive !== undefined ? dockSettings.exclusive : (dockSettings.exclusiveMode !== undefined ? dockSettings.exclusiveMode : false)) ? true : false
     property real currentOpacity: {
         if (dockSettings && dockSettings.opacity !== undefined) return Number(dockSettings.opacity);
         if (dockSettings && dockSettings.transparency !== undefined) return Math.max(0, 100 - Number(dockSettings.transparency));
@@ -72,6 +74,7 @@ Item {
         dockTabRoot.currentEnabled = s.enabled !== undefined ? s.enabled : true;
         dockTabRoot.currentPosition = s.position !== undefined ? s.position : "bottom";
         dockTabRoot.currentFloating = s.floating !== undefined ? s.floating : false;
+        dockTabRoot.currentExclusive = s.exclusive !== undefined ? s.exclusive : (s.exclusiveMode !== undefined ? Boolean(s.exclusiveMode) : false);
         dockTabRoot.currentOpacity = s.opacity !== undefined ? Number(s.opacity) : (s.transparency !== undefined ? Math.max(0, 100 - Number(s.transparency)) : 100);
         dockTabRoot.currentElementSize = (s.elementSize !== undefined && !isNaN(parseInt(s.elementSize))) ? parseInt(s.elementSize) : 44;
         dockTabRoot.currentOverrideBoundsCorrection = s.overrideBoundsCorrection !== undefined ? s.overrideBoundsCorrection : false;
@@ -383,6 +386,72 @@ Item {
                         onToggled: function(val) {
                             dockTabRoot.currentFloating = val;
                             dockTabRoot.updateDockSetting("floating", val);
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: rowExclusiveLayout.implicitHeight + rootObj.s(24)
+                radius: ThemeBackend.borderRadius
+                color: Qt.alpha(ThemeBackend.surface0, 0.4)
+                border.width: 0
+                visible: dockTabRoot.currentEnabled
+
+                RowLayout {
+                    id: rowExclusiveLayout
+                    anchors.left: parent.left
+                    anchors.leftMargin: rootObj.s(14)
+                    anchors.right: parent.right
+                    anchors.rightMargin: rootObj.s(14)
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: rootObj.s(12)
+
+                    IconButton {
+                        enabled: false
+                        size: rootObj.s(32)
+                        Layout.preferredWidth: rootObj.s(32)
+                        Layout.preferredHeight: rootObj.s(32)
+                        Layout.alignment: Qt.AlignVCenter
+                        cornerRadius: ThemeBackend.borderRadius
+                        buttonIcon: "󰖲"
+                        iconFontSize: rootObj.s(16)
+                        accentColor: ThemeBackend.surface0
+                        textColor: "#ffffff"
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: rootObj.s(2)
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: I18n.t("guide.dock.exclusive.title", "Exclusive mode")
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: rootObj.s(13)
+                            color: ThemeBackend.text
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: I18n.t("guide.dock.exclusive.desc", "Prevent windows from taking space occupied by the dock")
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: rootObj.s(11)
+                            color: ThemeBackend.subtext0
+                        }
+                    }
+
+                    Toggle {
+                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                        checked: dockTabRoot.currentExclusive
+                        accentColor: ThemeBackend.mauve
+                        baseColor: ThemeBackend.surface1
+                        handleColor: ThemeBackend.crust
+                        handleOffColor: ThemeBackend.text
+                        onToggled: function(val) {
+                            dockTabRoot.currentExclusive = val;
+                            dockTabRoot.updateDockSetting("exclusive", val);
                         }
                     }
                 }

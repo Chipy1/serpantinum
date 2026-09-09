@@ -585,6 +585,10 @@
       "cascade_scale": {
         "title": "Scala elementi vicini",
         "desc": "Ingrandimento a cascata sulle icone adiacenti"
+      },
+      "exclusive": {
+        "title": "Modalità esclusiva",
+        "desc": "Impedisci alle finestre di occupare lo spazio del dock"
       }
     }
   },

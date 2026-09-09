@@ -586,6 +586,10 @@
       "cascade_scale": {
         "title": "Phóng to các mục lân cận",
         "desc": "Phóng to phân tầng cho các biểu tượng liền kề"
+      },
+      "exclusive": {
+        "title": "Chế độ độc quyền",
+        "desc": "Ngăn cửa sổ chiếm không gian của dock"
       }
     }
   },

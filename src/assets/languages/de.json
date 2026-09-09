@@ -630,6 +630,10 @@
       "cascade_scale": {
         "title": "Benachbarte Elemente skalieren",
         "desc": "Kaskadierende Vergrößerung benachbarter Symbole"
+      },
+      "exclusive": {
+        "title": "Exklusiver Modus",
+        "desc": "Fenster daran hindern, den Platz des Docks einzunehmen"
       }
     }
   },

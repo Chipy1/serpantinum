@@ -630,6 +630,10 @@
       "cascade_scale": {
         "title": "Escalar elementos cercanos",
         "desc": "Ampliación en cascada en los iconos contiguos"
+      },
+      "exclusive": {
+        "title": "Modo exclusivo",
+        "desc": "Evitar que las ventanas ocupen el espacio del dock"
       }
     }
   },

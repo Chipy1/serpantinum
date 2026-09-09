@@ -586,6 +586,10 @@
       "cascade_scale": {
         "title": "Scale nearest elements",
         "desc": "Cascading magnification on neighboring icons"
+      },
+      "exclusive": {
+        "title": "Exclusive mode",
+        "desc": "Prevent windows from taking space occupied by the dock"
       }
     }
   },
