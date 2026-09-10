@@ -28,21 +28,13 @@ Item {
     property var displaySettings: JSON.parse(JSON.stringify(Config.getSetting("display", defaultDisplaySettings)))
     property var monitorsList: []
 
-    readonly property string compositor: {
-        let de = (SystemInfo.desktopEnv || "").toLowerCase();
-        if (de.indexOf("niri") !== -1) return "niri";
-        if (de.indexOf("sway") !== -1) return "sway";
-        return "hyprland";
-    }
+    readonly property string compositor: DisplayManager.compositor
 
     property string pendingMonName: ""
     property real pendingMonTemp: 50
 
-    property string pendingMonScaleName: ""
-    property real pendingMonScaleVal: 1.0
-
-    property string pendingMonRateName: ""
-    property var pendingMonRateData: null
+    property string pendingModeName: ""
+    property var pendingModeData: null
 
     readonly property string detectedCity: {
         if (typeof Location !== "undefined" && Location.city && Location.city !== "Unknown") {
@@ -295,6 +287,68 @@ Item {
         return best;
     }
 
+    function buildResolutions(pairs) {
+        let map = {};
+        for (let i = 0; i < pairs.length; i++) {
+            let p = pairs[i];
+            if (!p || !p.width || !p.height || isNaN(p.rate)) continue;
+            let key = p.width + "x" + p.height;
+            if (!map[key]) map[key] = { width: p.width, height: p.height, rates: [] };
+            map[key].rates.push({ rate: p.rate, mode: p.mode });
+        }
+        let out = [];
+        let keys = Object.keys(map);
+        for (let j = 0; j < keys.length; j++) {
+            let res = map[keys[j]];
+            res.rates = displayTabRoot.normalizeRates(res.rates);
+            if (res.rates.length > 0) out.push(res);
+        }
+        out.sort((a, b) => (b.width * b.height - a.width * a.height) || (b.width - a.width));
+        return out;
+    }
+
+    function ratesForResolution(resolutions, width, height) {
+        for (let i = 0; i < resolutions.length; i++) {
+            if (resolutions[i].width === width && resolutions[i].height === height) {
+                return resolutions[i].rates;
+            }
+        }
+        return [];
+    }
+
+    function queueModeApply(monName, data) {
+        if (!monName || !data) return;
+        pendingModeName = monName;
+        pendingModeData = data;
+        modeDebounceTimer.restart();
+    }
+
+    function persistMode(monName, data) {
+        if (!monName || !data) return;
+        let current = Config.getSetting("display", defaultDisplaySettings);
+        if (!current.monitors) current.monitors = {};
+        if (!current.monitors[monName]) current.monitors[monName] = {};
+        let m = current.monitors[monName];
+        if (data.mode !== undefined && data.mode !== "") m.mode = data.mode;
+        if (data.resolution !== undefined) m.resolution = data.resolution;
+        if (data.rate !== undefined && data.rate !== null) m.refreshRate = data.rate;
+        if (data.scale !== undefined && data.scale !== null) m.scale = data.scale;
+        Config.setSetting("display", current);
+        displayTabRoot.displaySettings = JSON.parse(JSON.stringify(current));
+    }
+
+    function flushModeApply(monName) {
+        modeDebounceTimer.stop();
+        if (pendingModeName === monName && pendingModeData) {
+            let name = pendingModeName;
+            let data = pendingModeData;
+            pendingModeName = "";
+            pendingModeData = null;
+            DisplayManager.applyMode(name, data.mode, data.scale);
+            displayTabRoot.persistMode(name, data);
+        }
+    }
+
     Process {
         id: monitorDetector
         running: false
@@ -327,22 +381,24 @@ Item {
                             let rr = m.refresh_rate ? (m.refresh_rate / 1000) : 60;
                             let sc = item.scale !== undefined ? item.scale : 1.0;
                             let isOff = item.active === false || item.is_active === false || (modes.length > 0 && (item.current_mode === null || item.current_mode === undefined));
-                            let rates = [];
+                            let pairs = [];
                             for (let j = 0; j < modes.length; j++) {
                                 let mo = modes[j];
-                                if (!mo || mo.width !== w || mo.height !== h) continue;
+                                if (!mo || !mo.width || !mo.height) continue;
                                 let rv = (mo.refresh_rate || 60000) / 1000;
-                                rates.push({ rate: rv, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rv) });
+                                pairs.push({ width: mo.width, height: mo.height, rate: rv, mode: mo.width + "x" + mo.height + "@" + displayTabRoot.formatRate(rv) });
                             }
-                            rates = displayTabRoot.normalizeRates(rates);
-                            if (rates.length === 0 && w > 0 && h > 0) {
-                                rates.push({ rate: rr, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rr) });
+                            if (w > 0 && h > 0) {
+                                pairs.push({ width: w, height: h, rate: rr, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rr) });
                             }
+                            let resolutions = displayTabRoot.buildResolutions(pairs);
+                            let rates = displayTabRoot.ratesForResolution(resolutions, w, h);
                             mList.push({
                                 name: k,
                                 dimensions: w + "x" + h,
                                 framerate: Math.round(rr).toString(),
                                 refreshRate: rr,
+                                resolutions: resolutions,
                                 refreshRates: rates,
                                 scale: sc,
                                 active: !isOff
@@ -359,23 +415,25 @@ Item {
                                 let rr = cm.refresh ? (cm.refresh / 1000) : 60;
                                 let sc = item.scale !== undefined ? item.scale : 1.0;
                                 let isOff = item.active === false;
-                                let rates = [];
+                                let pairs = [];
                                 let modes = item.modes || [];
                                 for (let j = 0; j < modes.length; j++) {
                                     let mo = modes[j];
-                                    if (!mo || mo.width !== w || mo.height !== h) continue;
+                                    if (!mo || !mo.width || !mo.height) continue;
                                     let rv = (mo.refresh || 60000) / 1000;
-                                    rates.push({ rate: rv, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rv) + "Hz" });
+                                    pairs.push({ width: mo.width, height: mo.height, rate: rv, mode: mo.width + "x" + mo.height + "@" + displayTabRoot.formatRate(rv) + "Hz" });
                                 }
-                                rates = displayTabRoot.normalizeRates(rates);
-                                if (rates.length === 0 && w > 0 && h > 0) {
-                                    rates.push({ rate: rr, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rr) + "Hz" });
+                                if (w > 0 && h > 0) {
+                                    pairs.push({ width: w, height: h, rate: rr, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rr) + "Hz" });
                                 }
+                                let resolutions = displayTabRoot.buildResolutions(pairs);
+                                let rates = displayTabRoot.ratesForResolution(resolutions, w, h);
                                 mList.push({
                                     name: name,
                                     dimensions: w + "x" + h,
                                     framerate: Math.round(rr).toString(),
                                     refreshRate: rr,
+                                    resolutions: resolutions,
                                     refreshRates: rates,
                                     scale: sc,
                                     active: !isOff
@@ -392,23 +450,24 @@ Item {
                                 let rr = item.refreshRate ? item.refreshRate : 60;
                                 let sc = item.scale !== undefined ? item.scale : 1.0;
                                 let isOff = item.disabled === true;
-                                let rates = [];
+                                let pairs = [];
                                 let modes = item.availableModes || [];
                                 for (let j = 0; j < modes.length; j++) {
                                     let mm = /^(\d+)x(\d+)@([\d.]+)(?:Hz)?$/.exec(modes[j]);
                                     if (!mm) continue;
-                                    if (parseInt(mm[1]) !== w || parseInt(mm[2]) !== h) continue;
-                                    rates.push({ rate: parseFloat(mm[3]), mode: mm[1] + "x" + mm[2] + "@" + mm[3] });
+                                    pairs.push({ width: parseInt(mm[1]), height: parseInt(mm[2]), rate: parseFloat(mm[3]), mode: mm[1] + "x" + mm[2] + "@" + mm[3] });
                                 }
-                                rates = displayTabRoot.normalizeRates(rates);
-                                if (rates.length === 0 && w > 0 && h > 0) {
-                                    rates.push({ rate: rr, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rr) });
+                                if (w > 0 && h > 0) {
+                                    pairs.push({ width: w, height: h, rate: rr, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rr) });
                                 }
+                                let resolutions = displayTabRoot.buildResolutions(pairs);
+                                let rates = displayTabRoot.ratesForResolution(resolutions, w, h);
                                 mList.push({
                                     name: name,
                                     dimensions: w + "x" + h,
                                     framerate: Math.round(rr).toString(),
                                     refreshRate: rr,
+                                    resolutions: resolutions,
                                     refreshRates: rates,
                                     scale: sc,
                                     active: !isOff
@@ -460,59 +519,10 @@ Item {
 
     function applyMonitorPower(monName, enabled) {
         if (!monName) return;
-        if (displayTabRoot.compositor === "niri") {
-            Quickshell.execDetached(["bash", "-c", enabled ? "niri msg output " + monName + " on" : "niri msg output " + monName + " off"]);
-        } else if (displayTabRoot.compositor === "sway") {
-            Quickshell.execDetached(["bash", "-c", "swaymsg output " + monName + (enabled ? " enable" : " disable")]);
-        } else {
-            let mon = displayTabRoot.monitorsList.find(m => m.name === monName);
-            let modeStr = mon ? (mon.dimensions + "@" + mon.framerate) : "preferred";
-            let scaleVal = mon ? mon.scale : 1.0;
-            if (enabled) {
-                let luaCmd =
-                    'hl.monitor({' +
-                    ' output = "' + monName + '",' +
-                    ' mode = "' + modeStr + '",' +
-                    ' position = "auto",' +
-                    ' scale = ' + scaleVal.toString() + ',' +
-                    ' disabled = false' +
-                    ' })';
-                Quickshell.execDetached(["bash", "-c", "hyprctl eval '" + luaCmd + "'"]);
-            } else {
-                let luaCmd =
-                    'hl.monitor({ output = "' + monName + '", disabled = true })';
-                Quickshell.execDetached(["bash", "-c", "hyprctl eval '" + luaCmd + "'"]);
-            }
-        }
-    }
-
-    function applyMonitorScale(monName, scaleVal) {
-        if (!monName || !scaleVal) return;
-        if (displayTabRoot.compositor === "niri") {
-            Quickshell.execDetached(["bash", "-c", "niri msg output " + monName + " scale " + scaleVal.toString()]);
-        } else if (displayTabRoot.compositor === "sway") {
-            Quickshell.execDetached(["bash", "-c", "swaymsg output " + monName + " scale " + scaleVal.toString()]);
-        } else {
-            let mon = displayTabRoot.monitorsList.find(m => m.name === monName);
-            let modeStr = mon ? (mon.dimensions + "@" + mon.framerate) : "preferred";
-            let luaCmd = 'hl.monitor({ output = "' + monName + '", mode = "' + modeStr + '", position = "auto", scale = ' + scaleVal.toString() + ' })';
-            Quickshell.execDetached(["bash", "-c", "hyprctl eval '" + luaCmd + "' || hyprctl keyword monitor " + monName + "," + modeStr + ",auto," + scaleVal.toString()]);
-        }
-    }
-
-    function applyMonitorRefreshRate(monName, rateData) {
-        if (!monName || !rateData || !rateData.mode) return;
-        let modeStr = rateData.mode;
-        if (displayTabRoot.compositor === "niri") {
-            Quickshell.execDetached(["bash", "-c", "niri msg output " + monName + " mode " + modeStr]);
-        } else if (displayTabRoot.compositor === "sway") {
-            Quickshell.execDetached(["bash", "-c", "swaymsg output " + monName + " mode " + modeStr]);
-        } else {
-            let mon = displayTabRoot.monitorsList.find(m => m.name === monName);
-            let scaleVal = mon ? mon.scale : 1.0;
-            let luaCmd = 'hl.monitor({ output = "' + monName + '", mode = "' + modeStr + '", position = "auto", scale = ' + scaleVal.toString() + ' })';
-            Quickshell.execDetached(["bash", "-c", "hyprctl eval '" + luaCmd + "' || hyprctl keyword monitor " + monName + "," + modeStr + ",auto," + scaleVal.toString()]);
-        }
+        let mon = displayTabRoot.monitorsList.find(m => m.name === monName);
+        let modeStr = mon ? (mon.dimensions + "@" + mon.framerate) : "";
+        let scaleVal = mon ? mon.scale : 1.0;
+        DisplayManager.applyPower(monName, enabled, modeStr, scaleVal);
     }
 
     function updateMonitorSettingDebounced(monName, tempVal) {
@@ -548,30 +558,17 @@ Item {
     }
 
     Timer {
-        id: scaleDebounceTimer
+        id: modeDebounceTimer
         interval: 1000
         repeat: false
         onTriggered: {
-            if (displayTabRoot.pendingMonScaleName !== "") {
-                displayTabRoot.applyMonitorScale(displayTabRoot.pendingMonScaleName, displayTabRoot.pendingMonScaleVal);
-                displayTabRoot.updateMonitorSetting(displayTabRoot.pendingMonScaleName, "scale", displayTabRoot.pendingMonScaleVal);
-                displayTabRoot.pendingMonScaleName = "";
-            }
-        }
-    }
-
-    Timer {
-        id: rateDebounceTimer
-        interval: 1000
-        repeat: false
-        onTriggered: {
-            if (displayTabRoot.pendingMonRateName !== "" && displayTabRoot.pendingMonRateData) {
-                let name = displayTabRoot.pendingMonRateName;
-                let data = displayTabRoot.pendingMonRateData;
-                displayTabRoot.applyMonitorRefreshRate(name, data);
-                displayTabRoot.updateMonitorSetting(name, "refreshRate", data.rate);
-                displayTabRoot.pendingMonRateName = "";
-                displayTabRoot.pendingMonRateData = null;
+            if (displayTabRoot.pendingModeName !== "" && displayTabRoot.pendingModeData) {
+                let name = displayTabRoot.pendingModeName;
+                let data = displayTabRoot.pendingModeData;
+                displayTabRoot.pendingModeName = "";
+                displayTabRoot.pendingModeData = null;
+                DisplayManager.applyMode(name, data.mode, data.scale);
+                displayTabRoot.persistMode(name, data);
             }
         }
     }
@@ -698,6 +695,7 @@ Item {
 
                     Component.onCompleted: {
                         appeared = true;
+                        syncResIndexFromModel();
                     }
 
                     property var resDims: modelData.dimensions ? modelData.dimensions.split("x") : ["1920", "1080"]
@@ -712,9 +710,38 @@ Item {
                         return ni >= 0 ? ni : 0;
                     }
 
-                    property var validRates: modelData.refreshRates !== undefined ? modelData.refreshRates : []
+                    property var resList: {
+                        if (modelData.resolutions !== undefined && modelData.resolutions.length > 0) return modelData.resolutions;
+                        if (modelData.dimensions) {
+                            return [{ width: monWidth, height: monHeight, rates: modelData.refreshRates || [] }];
+                        }
+                        return [];
+                    }
+                    readonly property var resOptions: resList.map(function(r) { return r.width + " × " + r.height; })
+                    property int currentResIndex: 0
+                    readonly property var currentRes: (currentResIndex >= 0 && currentResIndex < resList.length) ? resList[currentResIndex] : null
+                    property var validRates: currentRes ? currentRes.rates : (modelData.refreshRates !== undefined ? modelData.refreshRates : [])
                     property real currentRate: modelData.refreshRate !== undefined ? modelData.refreshRate : (parseFloat(modelData.framerate) || 60)
                     readonly property int currentRateIndex: displayTabRoot.nearestRateIndex(validRates, currentRate)
+                    readonly property string currentResolution: currentRes ? (currentRes.width + "x" + currentRes.height) : (modelData.dimensions || "")
+                    readonly property string resolutionDisplay: currentResolution !== "" ? currentResolution.split("x").join(" × ") : ""
+                    readonly property string currentModeStr: {
+                        let d = validRates[currentRateIndex];
+                        return d ? d.mode : "";
+                    }
+
+                    function syncResIndexFromModel() {
+                        if (!modelData.dimensions) return;
+                        let p = modelData.dimensions.split("x");
+                        let w = parseInt(p[0]);
+                        let h = parseInt(p[1]);
+                        for (let i = 0; i < resList.length; i++) {
+                            if (resList[i].width === w && resList[i].height === h) {
+                                currentResIndex = i;
+                                return;
+                            }
+                        }
+                    }
 
                     onMonSettingsChanged: {
                         if (monSettings.powerEnabled !== undefined) {
@@ -731,11 +758,10 @@ Item {
                         if (monSettings.powerEnabled === undefined && modelData.active !== undefined) {
                             monitorPowered = modelData.active;
                         }
-                        if (displayTabRoot.pendingMonScaleName !== monName) {
+                        if (displayTabRoot.pendingModeName !== monName) {
                             currentScale = modelData.scale !== undefined ? modelData.scale : 1.0;
-                        }
-                        if (displayTabRoot.pendingMonRateName !== monName) {
                             currentRate = modelData.refreshRate !== undefined ? modelData.refreshRate : (parseFloat(modelData.framerate) || 60);
+                            syncResIndexFromModel();
                         }
                     }
 
@@ -765,7 +791,7 @@ Item {
                             Item { Layout.fillWidth: true }
 
                             Text {
-                                text: modelData.dimensions + " • " + modelData.framerate + "Hz"
+                                text: monDelegate.resolutionDisplay + " • " + Math.round(monDelegate.currentRate) + "Hz"
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(12)
                                 color: ThemeBackend.subtext0
@@ -1120,6 +1146,96 @@ Item {
 
                         Rectangle {
                             Layout.fillWidth: true
+                            implicitHeight: rowResolutionLayout.implicitHeight + rootObj.s(24)
+                            radius: ThemeBackend.borderRadius
+                            color: Qt.alpha(ThemeBackend.surface1, 0.35)
+                            border.width: 0
+
+                            RowLayout {
+                                id: rowResolutionLayout
+                                anchors.left: parent.left
+                                anchors.leftMargin: rootObj.s(14)
+                                anchors.right: parent.right
+                                anchors.rightMargin: rootObj.s(14)
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: rootObj.s(12)
+
+                                IconButton {
+                                    enabled: false
+                                    size: rootObj.s(32)
+                                    Layout.preferredWidth: rootObj.s(32)
+                                    Layout.preferredHeight: rootObj.s(32)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    cornerRadius: ThemeBackend.borderRadius
+                                    buttonIcon: "󰍹"
+                                    iconFontSize: rootObj.s(16)
+                                    accentColor: ThemeBackend.surface0
+                                    textColor: "#ffffff"
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
+                                    spacing: rootObj.s(2)
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: I18n.t("guide.display.resolution.title")
+                                        font.family: ThemeBackend.fontFamily
+                                        font.pixelSize: rootObj.s(13)
+                                        color: ThemeBackend.text
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: I18n.t("guide.display.resolution.desc")
+                                        font.family: ThemeBackend.fontFamily
+                                        font.pixelSize: rootObj.s(11)
+                                        color: ThemeBackend.subtext0
+                                    }
+                                }
+
+                                Dropdown {
+                                    id: resolutionDropdown
+                                    Layout.preferredWidth: rootObj.s(150)
+                                    Layout.preferredHeight: rootObj.s(32)
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                    options: monDelegate.resOptions
+                                    currentIndex: monDelegate.currentResIndex
+                                    enabled: monDelegate.resOptions.length > 1
+                                    fontFamily: ThemeBackend.fontFamily
+                                    fontPixelSize: rootObj.s(11)
+                                    accentColor: ThemeBackend.mauve
+                                    baseColor: ThemeBackend.surface0
+                                    hoverColor: Qt.alpha(ThemeBackend.surface1, 0.6)
+                                    dropdownColor: ThemeBackend.surface0
+                                    borderColor: Qt.alpha(ThemeBackend.surface1, 0.5)
+                                    textColor: ThemeBackend.text
+                                    activeTextColor: ThemeBackend.crust
+                                    subTextColor: ThemeBackend.subtext0
+                                    onSelected: function(index, value) {
+                                        if (index === monDelegate.currentResIndex) return;
+                                        if (index < 0 || index >= monDelegate.resList.length) return;
+                                        monDelegate.currentResIndex = index;
+                                        let res = monDelegate.resList[index];
+                                        let rates = (res && res.rates) ? res.rates : [];
+                                        let chosen = rates.length > 0 ? rates[displayTabRoot.nearestRateIndex(rates, monDelegate.currentRate)] : null;
+                                        if (chosen) {
+                                            monDelegate.currentRate = chosen.rate;
+                                            displayTabRoot.queueModeApply(monDelegate.monName, {
+                                                mode: chosen.mode,
+                                                rate: chosen.rate,
+                                                resolution: res.width + "x" + res.height,
+                                                scale: monDelegate.currentScale
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
                             implicitHeight: rowRefreshLayout.implicitHeight + rootObj.s(24)
                             radius: ThemeBackend.borderRadius
                             color: Qt.alpha(ThemeBackend.surface1, 0.35)
@@ -1178,7 +1294,7 @@ Item {
                                         Layout.preferredWidth: rootObj.s(32)
                                         Layout.preferredHeight: rootObj.s(32)
                                         Layout.alignment: Qt.AlignVCenter
-                                        running: rateDebounceTimer.running && displayTabRoot.pendingMonRateName === monDelegate.monName
+                                        running: modeDebounceTimer.running && displayTabRoot.pendingModeName === monDelegate.monName
                                         accentColor: ThemeBackend.mauve
                                     }
 
@@ -1210,19 +1326,16 @@ Item {
                                             let data = monDelegate.validRates[i];
                                             if (data && Math.abs(monDelegate.currentRate - data.rate) > 0.01) {
                                                 monDelegate.currentRate = data.rate;
-                                                displayTabRoot.pendingMonRateName = monDelegate.monName;
-                                                displayTabRoot.pendingMonRateData = data;
-                                                rateDebounceTimer.restart();
+                                                displayTabRoot.queueModeApply(monDelegate.monName, {
+                                                    mode: data.mode,
+                                                    rate: data.rate,
+                                                    resolution: monDelegate.currentResolution,
+                                                    scale: monDelegate.currentScale
+                                                });
                                             }
                                         }
                                         onDragFinished: {
-                                            rateDebounceTimer.stop();
-                                            if (displayTabRoot.pendingMonRateName !== "" && displayTabRoot.pendingMonRateData) {
-                                                displayTabRoot.applyMonitorRefreshRate(displayTabRoot.pendingMonRateName, displayTabRoot.pendingMonRateData);
-                                                displayTabRoot.updateMonitorSetting(displayTabRoot.pendingMonRateName, "refreshRate", displayTabRoot.pendingMonRateData.rate);
-                                                displayTabRoot.pendingMonRateName = "";
-                                                displayTabRoot.pendingMonRateData = null;
-                                            }
+                                            displayTabRoot.flushModeApply(monDelegate.monName);
                                         }
                                     }
                                 }
@@ -1289,7 +1402,7 @@ Item {
                                         Layout.preferredWidth: rootObj.s(32)
                                         Layout.preferredHeight: rootObj.s(32)
                                         Layout.alignment: Qt.AlignVCenter
-                                        running: scaleDebounceTimer.running && displayTabRoot.pendingMonScaleName === monDelegate.monName
+                                        running: modeDebounceTimer.running && displayTabRoot.pendingModeName === monDelegate.monName
                                         accentColor: ThemeBackend.mauve
                                     }
 
@@ -1319,18 +1432,16 @@ Item {
                                             let s = monDelegate.validScales[i] !== undefined ? monDelegate.validScales[i] : 1.0;
                                             if (monDelegate.currentScale !== s) {
                                                 monDelegate.currentScale = s;
-                                                displayTabRoot.pendingMonScaleName = monDelegate.monName;
-                                                displayTabRoot.pendingMonScaleVal = s;
-                                                scaleDebounceTimer.restart();
+                                                displayTabRoot.queueModeApply(monDelegate.monName, {
+                                                    mode: monDelegate.currentModeStr,
+                                                    rate: monDelegate.currentRate,
+                                                    resolution: monDelegate.currentResolution,
+                                                    scale: s
+                                                });
                                             }
                                         }
                                         onDragFinished: {
-                                            scaleDebounceTimer.stop();
-                                            if (displayTabRoot.pendingMonScaleName !== "") {
-                                                displayTabRoot.applyMonitorScale(displayTabRoot.pendingMonScaleName, displayTabRoot.pendingMonScaleVal);
-                                                displayTabRoot.updateMonitorSetting(displayTabRoot.pendingMonScaleName, "scale", displayTabRoot.pendingMonScaleVal);
-                                                displayTabRoot.pendingMonScaleName = "";
-                                            }
+                                            displayTabRoot.flushModeApply(monDelegate.monName);
                                         }
                                     }
                                 }
