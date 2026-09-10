@@ -97,7 +97,9 @@
       "empty_graphic": {
         "title": "Centro notifiche vuoto",
         "desc": "Mostra il gattino che dorme quando il centro delle notifiche è vuoto"
-      }
+      },
+      "test": "Prova notifica",
+      "test_desc": "Questa è una notifica di prova"
     },
     "idle": {
       "enabled": {

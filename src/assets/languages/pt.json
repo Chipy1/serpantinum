@@ -97,7 +97,9 @@
       "empty_graphic": {
         "title": "Animação de central vazia",
         "desc": "Exibe o gato dormindo na central quando vazia"
-      }
+      },
+      "test": "Testar notificação",
+      "test_desc": "Esta é uma notificação de teste"
     },
     "idle": {
       "enabled": {

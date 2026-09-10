@@ -98,7 +98,9 @@
       "empty_graphic": {
         "title": "Animation für leere benachrichtigungen",
         "desc": "Zeigt die schlafende katze im benachrichtigungszentrum an, wenn keine vorhanden sind"
-      }
+      },
+      "test": "Benachrichtigung testen",
+      "test_desc": "Dies ist eine Testbenachrichtigung"
     },
     "idle": {
       "enabled": {

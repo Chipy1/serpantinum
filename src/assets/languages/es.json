@@ -98,7 +98,9 @@
       "empty_graphic": {
         "title": "Animación de centro vacío",
         "desc": "Mostrar el gráfico del gato durmiendo en el centro de notificaciones cuando esté vacío"
-      }
+      },
+      "test": "Probar notificación",
+      "test_desc": "Esta es una notificación de prueba"
     },
     "idle": {
       "enabled": {
