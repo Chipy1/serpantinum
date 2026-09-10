@@ -252,6 +252,10 @@
         "title": "UI scale",
         "desc": "Set the display scale factor for this monitor"
       },
+      "refreshrate": {
+        "title": "Refresh rate",
+        "desc": "Set the display refresh rate for this monitor"
+      },
       "widgets": {
         "title": "Desktop widgets",
         "desc": "Configure and place widgets for this monitor",

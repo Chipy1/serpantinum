@@ -41,6 +41,9 @@ Item {
     property string pendingMonScaleName: ""
     property real pendingMonScaleVal: 1.0
 
+    property string pendingMonRateName: ""
+    property var pendingMonRateData: null
+
     readonly property string detectedCity: {
         if (typeof Location !== "undefined" && Location.city && Location.city !== "Unknown") {
             return Location.city;
@@ -256,6 +259,42 @@ Item {
         return best;
     }
 
+    function formatRate(rv) {
+        let n = Number(rv);
+        if (isNaN(n)) return "60";
+        let s = n.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+        return s === "" ? "0" : s;
+    }
+
+    function normalizeRates(rates) {
+        let seen = {};
+        let out = [];
+        for (let i = 0; i < rates.length; i++) {
+            let r = rates[i];
+            if (!r || isNaN(r.rate)) continue;
+            let key = Number(r.rate).toFixed(2);
+            if (seen[key]) continue;
+            seen[key] = true;
+            out.push({ rate: Number(r.rate), mode: r.mode });
+        }
+        out.sort((a, b) => a.rate - b.rate);
+        return out;
+    }
+
+    function nearestRateIndex(validRates, target) {
+        if (!validRates || validRates.length === 0) return 0;
+        let best = 0;
+        let bestDiff = Math.abs(validRates[0].rate - target);
+        for (let i = 1; i < validRates.length; i++) {
+            let diff = Math.abs(validRates[i].rate - target);
+            if (diff < bestDiff) {
+                best = i;
+                bestDiff = diff;
+            }
+        }
+        return best;
+    }
+
     Process {
         id: monitorDetector
         running: false
@@ -285,13 +324,26 @@ Item {
                             let m = modes[modeIdx] || modes[0] || {};
                             let w = m.width || 0;
                             let h = m.height || 0;
-                            let rr = m.refresh_rate ? Math.round(m.refresh_rate / 1000) : 60;
+                            let rr = m.refresh_rate ? (m.refresh_rate / 1000) : 60;
                             let sc = item.scale !== undefined ? item.scale : 1.0;
                             let isOff = item.active === false || item.is_active === false || (modes.length > 0 && (item.current_mode === null || item.current_mode === undefined));
+                            let rates = [];
+                            for (let j = 0; j < modes.length; j++) {
+                                let mo = modes[j];
+                                if (!mo || mo.width !== w || mo.height !== h) continue;
+                                let rv = (mo.refresh_rate || 60000) / 1000;
+                                rates.push({ rate: rv, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rv) });
+                            }
+                            rates = displayTabRoot.normalizeRates(rates);
+                            if (rates.length === 0 && w > 0 && h > 0) {
+                                rates.push({ rate: rr, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rr) });
+                            }
                             mList.push({
                                 name: k,
                                 dimensions: w + "x" + h,
-                                framerate: rr.toString(),
+                                framerate: Math.round(rr).toString(),
+                                refreshRate: rr,
+                                refreshRates: rates,
                                 scale: sc,
                                 active: !isOff
                             });
@@ -304,13 +356,27 @@ Item {
                                 let cm = item.current_mode || {};
                                 let w = cm.width || item.rect?.width || 0;
                                 let h = cm.height || item.rect?.height || 0;
-                                let rr = cm.refresh ? Math.round(cm.refresh / 1000) : 60;
+                                let rr = cm.refresh ? (cm.refresh / 1000) : 60;
                                 let sc = item.scale !== undefined ? item.scale : 1.0;
                                 let isOff = item.active === false;
+                                let rates = [];
+                                let modes = item.modes || [];
+                                for (let j = 0; j < modes.length; j++) {
+                                    let mo = modes[j];
+                                    if (!mo || mo.width !== w || mo.height !== h) continue;
+                                    let rv = (mo.refresh || 60000) / 1000;
+                                    rates.push({ rate: rv, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rv) + "Hz" });
+                                }
+                                rates = displayTabRoot.normalizeRates(rates);
+                                if (rates.length === 0 && w > 0 && h > 0) {
+                                    rates.push({ rate: rr, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rr) + "Hz" });
+                                }
                                 mList.push({
                                     name: name,
                                     dimensions: w + "x" + h,
-                                    framerate: rr.toString(),
+                                    framerate: Math.round(rr).toString(),
+                                    refreshRate: rr,
+                                    refreshRates: rates,
                                     scale: sc,
                                     active: !isOff
                                 });
@@ -323,13 +389,27 @@ Item {
                                 let name = item.name || "";
                                 let w = item.width || 0;
                                 let h = item.height || 0;
-                                let rr = item.refreshRate ? Math.round(item.refreshRate) : 60;
+                                let rr = item.refreshRate ? item.refreshRate : 60;
                                 let sc = item.scale !== undefined ? item.scale : 1.0;
                                 let isOff = item.disabled === true;
+                                let rates = [];
+                                let modes = item.availableModes || [];
+                                for (let j = 0; j < modes.length; j++) {
+                                    let mm = /^(\d+)x(\d+)@([\d.]+)(?:Hz)?$/.exec(modes[j]);
+                                    if (!mm) continue;
+                                    if (parseInt(mm[1]) !== w || parseInt(mm[2]) !== h) continue;
+                                    rates.push({ rate: parseFloat(mm[3]), mode: mm[1] + "x" + mm[2] + "@" + mm[3] });
+                                }
+                                rates = displayTabRoot.normalizeRates(rates);
+                                if (rates.length === 0 && w > 0 && h > 0) {
+                                    rates.push({ rate: rr, mode: w + "x" + h + "@" + displayTabRoot.formatRate(rr) });
+                                }
                                 mList.push({
                                     name: name,
                                     dimensions: w + "x" + h,
-                                    framerate: rr.toString(),
+                                    framerate: Math.round(rr).toString(),
+                                    refreshRate: rr,
+                                    refreshRates: rates,
                                     scale: sc,
                                     active: !isOff
                                 });
@@ -420,6 +500,21 @@ Item {
         }
     }
 
+    function applyMonitorRefreshRate(monName, rateData) {
+        if (!monName || !rateData || !rateData.mode) return;
+        let modeStr = rateData.mode;
+        if (displayTabRoot.compositor === "niri") {
+            Quickshell.execDetached(["bash", "-c", "niri msg output " + monName + " mode " + modeStr]);
+        } else if (displayTabRoot.compositor === "sway") {
+            Quickshell.execDetached(["bash", "-c", "swaymsg output " + monName + " mode " + modeStr]);
+        } else {
+            let mon = displayTabRoot.monitorsList.find(m => m.name === monName);
+            let scaleVal = mon ? mon.scale : 1.0;
+            let luaCmd = 'hl.monitor({ output = "' + monName + '", mode = "' + modeStr + '", position = "auto", scale = ' + scaleVal.toString() + ' })';
+            Quickshell.execDetached(["bash", "-c", "hyprctl eval '" + luaCmd + "' || hyprctl keyword monitor " + monName + "," + modeStr + ",auto," + scaleVal.toString()]);
+        }
+    }
+
     function updateMonitorSettingDebounced(monName, tempVal) {
         pendingMonName = monName;
         pendingMonTemp = tempVal;
@@ -461,6 +556,22 @@ Item {
                 displayTabRoot.applyMonitorScale(displayTabRoot.pendingMonScaleName, displayTabRoot.pendingMonScaleVal);
                 displayTabRoot.updateMonitorSetting(displayTabRoot.pendingMonScaleName, "scale", displayTabRoot.pendingMonScaleVal);
                 displayTabRoot.pendingMonScaleName = "";
+            }
+        }
+    }
+
+    Timer {
+        id: rateDebounceTimer
+        interval: 1000
+        repeat: false
+        onTriggered: {
+            if (displayTabRoot.pendingMonRateName !== "" && displayTabRoot.pendingMonRateData) {
+                let name = displayTabRoot.pendingMonRateName;
+                let data = displayTabRoot.pendingMonRateData;
+                displayTabRoot.applyMonitorRefreshRate(name, data);
+                displayTabRoot.updateMonitorSetting(name, "refreshRate", data.rate);
+                displayTabRoot.pendingMonRateName = "";
+                displayTabRoot.pendingMonRateData = null;
             }
         }
     }
@@ -601,6 +712,10 @@ Item {
                         return ni >= 0 ? ni : 0;
                     }
 
+                    property var validRates: modelData.refreshRates !== undefined ? modelData.refreshRates : []
+                    property real currentRate: modelData.refreshRate !== undefined ? modelData.refreshRate : (parseFloat(modelData.framerate) || 60)
+                    readonly property int currentRateIndex: displayTabRoot.nearestRateIndex(validRates, currentRate)
+
                     onMonSettingsChanged: {
                         if (monSettings.powerEnabled !== undefined) {
                             monitorPowered = monSettings.powerEnabled;
@@ -618,6 +733,9 @@ Item {
                         }
                         if (displayTabRoot.pendingMonScaleName !== monName) {
                             currentScale = modelData.scale !== undefined ? modelData.scale : 1.0;
+                        }
+                        if (displayTabRoot.pendingMonRateName !== monName) {
+                            currentRate = modelData.refreshRate !== undefined ? modelData.refreshRate : (parseFloat(modelData.framerate) || 60);
                         }
                     }
 
@@ -993,6 +1111,117 @@ Item {
                                                         displayTabRoot.flushMonitorSetting(monDelegate.monName);
                                                     }
                                                 }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: rowRefreshLayout.implicitHeight + rootObj.s(24)
+                            radius: ThemeBackend.borderRadius
+                            color: Qt.alpha(ThemeBackend.surface1, 0.35)
+                            border.width: 0
+
+                            RowLayout {
+                                id: rowRefreshLayout
+                                anchors.left: parent.left
+                                anchors.leftMargin: rootObj.s(14)
+                                anchors.right: parent.right
+                                anchors.rightMargin: rootObj.s(14)
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: rootObj.s(12)
+
+                                IconButton {
+                                    enabled: false
+                                    size: rootObj.s(32)
+                                    Layout.preferredWidth: rootObj.s(32)
+                                    Layout.preferredHeight: rootObj.s(32)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    cornerRadius: ThemeBackend.borderRadius
+                                    buttonIcon: "󰑓"
+                                    iconFontSize: rootObj.s(16)
+                                    accentColor: ThemeBackend.surface0
+                                    textColor: "#ffffff"
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
+                                    spacing: rootObj.s(2)
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: I18n.t("guide.display.refreshrate.title")
+                                        font.family: ThemeBackend.fontFamily
+                                        font.pixelSize: rootObj.s(13)
+                                        color: ThemeBackend.text
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: I18n.t("guide.display.refreshrate.desc")
+                                        font.family: ThemeBackend.fontFamily
+                                        font.pixelSize: rootObj.s(11)
+                                        color: ThemeBackend.subtext0
+                                    }
+                                }
+
+                                RowLayout {
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                    spacing: rootObj.s(4)
+
+                                    LoaderIcon {
+                                        id: refreshLoader
+                                        Layout.preferredWidth: rootObj.s(32)
+                                        Layout.preferredHeight: rootObj.s(32)
+                                        Layout.alignment: Qt.AlignVCenter
+                                        running: rateDebounceTimer.running && displayTabRoot.pendingMonRateName === monDelegate.monName
+                                        accentColor: ThemeBackend.mauve
+                                    }
+
+                                    Draggable {
+                                        id: refreshRateSlider
+                                        implicitWidth: rootObj.s(220)
+                                        implicitHeight: rootObj.s(18)
+                                        enabled: monDelegate.validRates.length > 1
+                                        from: 0
+                                        to: Math.max(0, monDelegate.validRates.length - 1)
+                                        stepSize: 1
+                                        defaultValue: Math.max(0, monDelegate.validRates.length - 1)
+                                        showValueBubble: true
+                                        showTooltip: true
+                                        alwaysShowHandle: false
+                                        valueFormatter: function(idx) {
+                                            let i = Math.round(idx);
+                                            let data = monDelegate.validRates[i];
+                                            let r = data ? data.rate : monDelegate.currentRate;
+                                            return Math.round(r) + " Hz";
+                                        }
+                                        value: monDelegate.currentRateIndex
+                                        backgroundColor: ThemeBackend.surface0
+                                        accentColor: ThemeBackend.mauve
+                                        handleColor: ThemeBackend.text
+                                        handleBorderColor: ThemeBackend.mantle
+                                        onMoved: function(idx) {
+                                            let i = Math.round(idx);
+                                            let data = monDelegate.validRates[i];
+                                            if (data && Math.abs(monDelegate.currentRate - data.rate) > 0.01) {
+                                                monDelegate.currentRate = data.rate;
+                                                displayTabRoot.pendingMonRateName = monDelegate.monName;
+                                                displayTabRoot.pendingMonRateData = data;
+                                                rateDebounceTimer.restart();
+                                            }
+                                        }
+                                        onDragFinished: {
+                                            rateDebounceTimer.stop();
+                                            if (displayTabRoot.pendingMonRateName !== "" && displayTabRoot.pendingMonRateData) {
+                                                displayTabRoot.applyMonitorRefreshRate(displayTabRoot.pendingMonRateName, displayTabRoot.pendingMonRateData);
+                                                displayTabRoot.updateMonitorSetting(displayTabRoot.pendingMonRateName, "refreshRate", displayTabRoot.pendingMonRateData.rate);
+                                                displayTabRoot.pendingMonRateName = "";
+                                                displayTabRoot.pendingMonRateData = null;
                                             }
                                         }
                                     }
